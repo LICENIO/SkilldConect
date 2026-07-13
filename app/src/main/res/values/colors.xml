@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="skill_bg">#ECF0F3</color>
+    <color name="skill_text">#182032</color>
+    <color name="skill_primary">#246BFE</color>
+</resources>
