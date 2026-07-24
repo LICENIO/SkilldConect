@@ -11,21 +11,25 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
-// Paleta de colores Neumórfica
+// Paleta de colores Neumórfica con Azul Celeste Eléctrico vibrante como la imagen enviada
 object NeumorphicColors {
-    val bg = Color(0xFFECF0F3)
-    val text = Color(0xFF2C3E50)
-    val muted = Color(0xFF7F8C8D)
-    val primary = Color(0xFF246BFE)
-    val green = Color(0xFF19A974)
-    val orange = Color(0xFFFF8A3D)
-    val purple = Color(0xFF7C5CFF)
-    val pink = Color(0xFFE05297)
-    val teal = Color(0xFF00A3A3)
+    val bg = Color(0xFFF0F4FA)
+    val text = Color(0xFF0F172A)
+    val muted = Color(0xFF64748B)
+    val primary = Color(0xFF0088FF) // Azul Celeste Eléctrico vibrante de la imagen
+    val headerBg = Color(0xFF0088FF) // Color del encabezado idéntico a la imagen
+    val bottomNavBg = Color(0xFF0077FF) // Azul celeste vibrante de la barra de la imagen
+    val accentYellow = Color(0xFFFDE68A) // Amarillo pastel suave y tenue (no intenso)
+    val accentCyan = Color(0xFF38BDF8) // Celeste brillante
+    val green = Color(0xFF10B981)
+    val orange = Color(0xFFF97316)
+    val purple = Color(0xFF8B5CF6)
+    val pink = Color(0xFFEC4899)
+    val teal = Color(0xFF00A896)
     
     // Sombras neumórficas
     val lightShadow = Color(0xFFFFFFFF)
-    val darkShadow = Color(0xFFD1D9E6)
+    val darkShadow = Color(0xFFD5DBE5)
 }
 
 // Modificador neumórfico personalizado para efectos Soft UI

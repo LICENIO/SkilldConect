@@ -42,8 +42,8 @@ class MainActivity : FragmentActivity() {
         viewModel = SkillConnectViewModel(repository)
         viewModel.loadData()
 
-        window.statusBarColor = NeumorphicColors.bg.toArgb()
-        window.navigationBarColor = Color.White.toArgb()
+        window.statusBarColor = NeumorphicColors.headerBg.toArgb()
+        window.navigationBarColor = NeumorphicColors.bottomNavBg.toArgb()
 
         setContent {
             AppContent(viewModel)
@@ -133,7 +133,8 @@ fun AppContent(viewModel: SkillConnectViewModel) {
                     onMentorSelect = { mentorId ->
                         viewModel.selectedMentorId = mentorId
                         navigateTo("mentor")
-                    }
+                    },
+                    onBack = { navigateBack() }
                 )
                 "mentor" -> MentorScreen(
                     viewModel = viewModel,
@@ -203,15 +204,12 @@ fun NeumorphicBottomNav(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .neumorphic(
-                lightShadowColor = Color.White,
-                darkShadowColor = Color(0xFFD1D9E6),
-                shadowRadius = 8.dp,
-                offset = 4.dp,
-                cornerRadius = 0.dp
+            .background(
+                androidx.compose.ui.graphics.Brush.horizontalGradient(
+                    listOf(Color(0xFF0099FF), Color(0xFF0066FF))
+                )
             )
-            .background(Color.White)
-            .padding(vertical = 10.dp, horizontal = 12.dp),
+            .padding(vertical = 8.dp, horizontal = 12.dp),
         horizontalArrangement = Arrangement.SpaceAround,
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -221,34 +219,31 @@ fun NeumorphicBottomNav(
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier
-                    .clip(RoundedCornerShape(12.dp))
+                    .clip(RoundedCornerShape(14.dp))
                     .clickable { onNavigate(screen) }
-                    .padding(vertical = 4.dp, horizontal = 8.dp)
+                    .padding(vertical = 4.dp, horizontal = 10.dp)
             ) {
                 Box(
                     modifier = Modifier
-                        .neumorphic(
-                            isInnerShadow = selected,
-                            cornerRadius = 12.dp,
-                            shadowRadius = if (selected) 2.dp else 4.dp,
-                            offset = if (selected) 2.dp else 4.dp
+                        .background(
+                            if (selected) Color.White.copy(alpha = 0.25f) else Color.Transparent,
+                            RoundedCornerShape(12.dp)
                         )
-                        .background(if (selected) NeumorphicColors.bg else Color.White, RoundedCornerShape(12.dp))
                         .padding(8.dp)
                 ) {
                     Icon(
                         imageVector = icon,
                         contentDescription = label,
-                        tint = if (selected) NeumorphicColors.primary else NeumorphicColors.muted,
-                        modifier = Modifier.size(20.dp)
+                        tint = if (selected) Color.White else Color.White.copy(alpha = 0.75f),
+                        modifier = Modifier.size(22.dp)
                     )
                 }
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
                     text = label,
-                    fontSize = 10.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = if (selected) NeumorphicColors.primary else NeumorphicColors.muted
+                    fontSize = 11.sp,
+                    fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+                    color = if (selected) Color.White else Color.White.copy(alpha = 0.75f)
                 )
             }
         }

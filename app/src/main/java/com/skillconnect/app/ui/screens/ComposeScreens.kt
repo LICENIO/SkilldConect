@@ -70,7 +70,7 @@ fun SplashScreen(onFinished: () -> Unit) {
                 onClick = onFinished,
                 modifier = Modifier.fillMaxWidth(0.8f)
             ) {
-                Text("Comenzar", color = NeumorphicColors.primary, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                Text("Comenzar", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
             }
         }
     }
@@ -90,15 +90,15 @@ fun WelcomeScreen(onLogin: () -> Unit, onRegister: () -> Unit) {
     ) {
         Spacer(modifier = Modifier.height(20.dp))
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            NeumorphicLogo("SC", size = 80.dp)
+            NeumorphicLogo("SC", size = 88.dp, backgroundColor = NeumorphicColors.primary)
             Spacer(modifier = Modifier.height(24.dp))
             Text(
-                text = "Todo el mundo tiene algo que enseñar",
-                fontSize = 28.sp,
+                text = "Todo el mundo tiene algo que enseñar y todo el mundo tiene algo que aprender",
+                fontSize = 26.sp,
                 fontWeight = FontWeight.Bold,
                 color = NeumorphicColors.text,
                 textAlign = TextAlign.Center,
-                lineHeight = 36.sp
+                lineHeight = 34.sp
             )
             Spacer(modifier = Modifier.height(14.dp))
             Text(
@@ -112,7 +112,8 @@ fun WelcomeScreen(onLogin: () -> Unit, onRegister: () -> Unit) {
         Spacer(modifier = Modifier.height(24.dp))
         
         NeumorphicCard(
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            backgroundColor = Color.White
         ) {
             Column {
                 Text(
@@ -135,16 +136,18 @@ fun WelcomeScreen(onLogin: () -> Unit, onRegister: () -> Unit) {
         Column(modifier = Modifier.fillMaxWidth()) {
             NeumorphicButton(
                 onClick = onLogin,
+                gradientBrush = ButtonGradients.SunsetGold,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Iniciar sesión", color = NeumorphicColors.primary, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                Text("Iniciar sesión", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
             }
             Spacer(modifier = Modifier.height(16.dp))
             NeumorphicButton(
                 onClick = onRegister,
+                gradientBrush = ButtonGradients.VioletCyan,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Crear cuenta", color = NeumorphicColors.muted, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                Text("Crear cuenta", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
             }
             Spacer(modifier = Modifier.height(20.dp))
         }
@@ -216,102 +219,102 @@ fun LoginScreen(viewModel: SkillConnectViewModel, onSuccess: () -> Unit, onRegis
             .fillMaxSize()
             .background(NeumorphicColors.bg)
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(24.dp)
-                .verticalScroll(rememberScrollState())
-        ) {
-            NeumorphicTopBar("Iniciar sesión", onBack)
+        Column(modifier = Modifier.fillMaxSize()) {
+            NeumorphicTopBar("Iniciar sesión", onBack, isDarkHeader = true)
             
-            Spacer(modifier = Modifier.height(20.dp))
-            
-            Text(
-                text = "Bienvenido de nuevo",
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Bold,
-                color = NeumorphicColors.text
-            )
-            Text(
-                text = "Ingresa tus datos o usa tu huella digital para continuar aprendiendo.",
-                fontSize = 14.sp,
-                color = NeumorphicColors.muted,
-                modifier = Modifier.padding(top = 4.dp, bottom = 28.dp)
-            )
-
-            Text("Correo electrónico", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = NeumorphicColors.muted)
-            Spacer(modifier = Modifier.height(8.dp))
-            NeumorphicTextField(
-                value = email,
-                onValueChange = { email = it },
-                placeholder = "ejemplo@correo.com"
-            )
-
-            Spacer(modifier = Modifier.height(20.dp))
-
-            Text("Contraseña", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = NeumorphicColors.muted)
-            Spacer(modifier = Modifier.height(8.dp))
-            NeumorphicTextField(
-                value = password,
-                onValueChange = { password = it },
-                placeholder = "Contraseña de 8 dígitos",
-                visualTransformation = PasswordVisualTransformation()
-            )
-
-            Spacer(modifier = Modifier.height(28.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                NeumorphicButton(
-                    onClick = {
-                        scope.launch {
-                            val success = viewModel.loginWithEmail(email, password)
-                            if (success) {
-                                Toast.makeText(context, "Bienvenido, ${viewModel.currentUser?.name}", Toast.LENGTH_SHORT).show()
-                                onSuccess()
-                            } else {
-                                Toast.makeText(context, "Correo o contraseña incorrectos", Toast.LENGTH_SHORT).show()
-                            }
-                        }
-                    },
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Text("Ingresar", color = NeumorphicColors.primary, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                }
-
-                Spacer(modifier = Modifier.width(18.dp))
-
-                Box(
-                    modifier = Modifier
-                        .size(54.dp)
-                        .neumorphic(cornerRadius = 16.dp)
-                        .background(NeumorphicColors.bg, RoundedCornerShape(16.dp))
-                        .clickable { triggerBiometricAuth() },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Fingerprint,
-                        contentDescription = "Iniciar con huella",
-                        tint = NeumorphicColors.primary,
-                        modifier = Modifier.size(32.dp)
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(34.dp))
-
-            Text(
-                text = "¿No tienes cuenta? Regístrate aquí",
-                color = NeumorphicColors.primary,
-                fontWeight = FontWeight.Bold,
-                fontSize = 14.sp,
-                textAlign = TextAlign.Center,
+            Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { onRegister() }
-            )
+                    .fillMaxSize()
+                    .padding(24.dp)
+                    .verticalScroll(rememberScrollState())
+            ) {
+                Text(
+                    text = "Bienvenido de nuevo",
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = NeumorphicColors.text
+                )
+                Text(
+                    text = "Ingresa tus datos o usa tu huella digital para continuar aprendiendo.",
+                    fontSize = 14.sp,
+                    color = NeumorphicColors.muted,
+                    modifier = Modifier.padding(top = 4.dp, bottom = 28.dp)
+                )
+
+                Text("Correo electrónico", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = NeumorphicColors.text)
+                Spacer(modifier = Modifier.height(8.dp))
+                NeumorphicTextField(
+                    value = email,
+                    onValueChange = { email = it },
+                    placeholder = "ejemplo@correo.com"
+                )
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                Text("Contraseña", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = NeumorphicColors.text)
+                Spacer(modifier = Modifier.height(8.dp))
+                NeumorphicTextField(
+                    value = password,
+                    onValueChange = { password = it },
+                    placeholder = "Contraseña de 8 dígitos",
+                    visualTransformation = PasswordVisualTransformation()
+                )
+
+                Spacer(modifier = Modifier.height(28.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    NeumorphicButton(
+                        onClick = {
+                            scope.launch {
+                                val success = viewModel.loginWithEmail(email, password)
+                                if (success) {
+                                    Toast.makeText(context, "Bienvenido, ${viewModel.currentUser?.name}", Toast.LENGTH_SHORT).show()
+                                    onSuccess()
+                                } else {
+                                    Toast.makeText(context, "Correo o contraseña incorrectos", Toast.LENGTH_SHORT).show()
+                                }
+                            }
+                        },
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text("Ingresar", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    }
+
+                    Spacer(modifier = Modifier.width(18.dp))
+
+                    Box(
+                        modifier = Modifier
+                            .size(54.dp)
+                            .neumorphic(cornerRadius = 16.dp)
+                            .background(NeumorphicColors.primary, RoundedCornerShape(16.dp))
+                            .clickable { triggerBiometricAuth() },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Fingerprint,
+                            contentDescription = "Iniciar con huella",
+                            tint = Color.White,
+                            modifier = Modifier.size(32.dp)
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(34.dp))
+
+                Text(
+                    text = "¿No tienes cuenta? Regístrate aquí",
+                    color = NeumorphicColors.primary,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 14.sp,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onRegister() }
+                )
+            }
         }
 
         if (showSimulatedAuth) {
@@ -325,7 +328,8 @@ fun LoginScreen(viewModel: SkillConnectViewModel, onSuccess: () -> Unit, onRegis
                     modifier = Modifier
                         .fillMaxWidth(0.85f)
                         .padding(16.dp),
-                    cornerRadius = 24.dp
+                    cornerRadius = 24.dp,
+                    backgroundColor = Color.White
                 ) {
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
@@ -350,7 +354,7 @@ fun LoginScreen(viewModel: SkillConnectViewModel, onSuccess: () -> Unit, onRegis
                             modifier = Modifier
                                 .size(90.dp)
                                 .neumorphic(cornerRadius = 45.dp, shadowRadius = 8.dp)
-                                .background(NeumorphicColors.bg, CircleShape)
+                                .background(NeumorphicColors.primary, CircleShape)
                                 .clickable {
                                     scope.launch {
                                         val success = viewModel.loginWithBiometrics()
@@ -368,7 +372,7 @@ fun LoginScreen(viewModel: SkillConnectViewModel, onSuccess: () -> Unit, onRegis
                             Icon(
                                 imageVector = Icons.Default.Fingerprint,
                                 contentDescription = "Huella",
-                                tint = NeumorphicColors.green,
+                                tint = NeumorphicColors.accentYellow,
                                 modifier = Modifier.size(48.dp)
                             )
                         }
@@ -376,9 +380,10 @@ fun LoginScreen(viewModel: SkillConnectViewModel, onSuccess: () -> Unit, onRegis
                         Spacer(modifier = Modifier.height(24.dp))
                         NeumorphicButton(
                             onClick = { showSimulatedAuth = false },
+                            backgroundColor = Color(0xFFE2E8F0),
                             modifier = Modifier.fillMaxWidth(0.7f)
                         ) {
-                            Text("Cancelar", color = NeumorphicColors.muted, fontWeight = FontWeight.Bold)
+                            Text("Cancelar", color = NeumorphicColors.text, fontWeight = FontWeight.Bold)
                         }
                     }
                 }
@@ -403,79 +408,82 @@ fun RegisterScreen(viewModel: SkillConnectViewModel, onSuccess: () -> Unit, onLo
         modifier = Modifier
             .fillMaxSize()
             .background(NeumorphicColors.bg)
-            .padding(24.dp)
-            .verticalScroll(rememberScrollState())
     ) {
-        NeumorphicTopBar("Crear cuenta", onBack)
+        NeumorphicTopBar("Crear cuenta", onBack, isDarkHeader = true)
         
-        Spacer(modifier = Modifier.height(14.dp))
-
-        Text("Nombre completo", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = NeumorphicColors.muted)
-        Spacer(modifier = Modifier.height(6.dp))
-        NeumorphicTextField(value = name, onValueChange = { name = it }, placeholder = "Tu nombre")
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Text("Correo electrónico", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = NeumorphicColors.muted)
-        Spacer(modifier = Modifier.height(6.dp))
-        NeumorphicTextField(value = email, onValueChange = { email = it }, placeholder = "correo@ejemplo.com")
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Text("Contraseña", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = NeumorphicColors.muted)
-        Spacer(modifier = Modifier.height(6.dp))
-        NeumorphicTextField(value = password, onValueChange = { password = it }, placeholder = "Mínimo 4 caracteres", visualTransformation = PasswordVisualTransformation())
-
-        Spacer(modifier = Modifier.height(22.dp))
-
-        Text("¿Qué deseas hacer en SkillConnect?", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = NeumorphicColors.text)
-        Spacer(modifier = Modifier.height(10.dp))
-        
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            options.forEach { option ->
-                NeumorphicChip(
-                    text = option,
-                    selected = selection == option,
-                    onClick = { selection = option },
-                    modifier = Modifier.weight(1f).padding(horizontal = 4.dp)
-                )
-            }
-        }
-
-        Spacer(modifier = Modifier.height(28.dp))
-
-        NeumorphicButton(
-            onClick = {
-                scope.launch {
-                    val success = viewModel.registerUser(name, email, password, selection)
-                    if (success) {
-                        Toast.makeText(context, "Cuenta creada con éxito", Toast.LENGTH_SHORT).show()
-                        onSuccess()
-                    } else {
-                        Toast.makeText(context, "Error: El correo ya existe o los datos son inválidos", Toast.LENGTH_SHORT).show()
-                    }
-                }
-            },
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("Registrarse", color = NeumorphicColors.primary, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-        }
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        Text(
-            text = "¿Ya tienes cuenta? Inicia sesión",
-            color = NeumorphicColors.primary,
-            fontWeight = FontWeight.Bold,
-            fontSize = 14.sp,
-            textAlign = TextAlign.Center,
+        Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .clickable { onLogin() }
-        )
+                .fillMaxSize()
+                .padding(24.dp)
+                .verticalScroll(rememberScrollState())
+        ) {
+            Text("Nombre completo", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = NeumorphicColors.text)
+            Spacer(modifier = Modifier.height(6.dp))
+            NeumorphicTextField(value = name, onValueChange = { name = it }, placeholder = "Tu nombre")
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Text("Correo electrónico", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = NeumorphicColors.text)
+            Spacer(modifier = Modifier.height(6.dp))
+            NeumorphicTextField(value = email, onValueChange = { email = it }, placeholder = "correo@ejemplo.com")
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Text("Contraseña", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = NeumorphicColors.text)
+            Spacer(modifier = Modifier.height(6.dp))
+            NeumorphicTextField(value = password, onValueChange = { password = it }, placeholder = "Mínimo 4 caracteres", visualTransformation = PasswordVisualTransformation())
+
+            Spacer(modifier = Modifier.height(22.dp))
+
+            Text("¿Qué deseas hacer en SkillConnect?", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = NeumorphicColors.text)
+            Spacer(modifier = Modifier.height(10.dp))
+            
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                options.forEach { option ->
+                    NeumorphicChip(
+                        text = option,
+                        selected = selection == option,
+                        onClick = { selection = option },
+                        modifier = Modifier.weight(1f).padding(horizontal = 4.dp)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(28.dp))
+
+            NeumorphicButton(
+                onClick = {
+                    scope.launch {
+                        val success = viewModel.registerUser(name, email, password, selection)
+                        if (success) {
+                            Toast.makeText(context, "¡Cuenta creada con éxito!", Toast.LENGTH_SHORT).show()
+                            onSuccess()
+                        } else {
+                            Toast.makeText(context, "Error: correo ya registrado o datos incompletos", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Registrarme", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Text(
+                text = "¿Ya tienes cuenta? Inicia sesión aquí",
+                color = NeumorphicColors.primary,
+                fontWeight = FontWeight.Bold,
+                fontSize = 14.sp,
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { onLogin() }
+            )
+        }
     }
 }
 
@@ -488,187 +496,241 @@ fun HomeScreen(viewModel: SkillConnectViewModel, onNavigate: (String) -> Unit) {
         modifier = Modifier
             .fillMaxSize()
             .background(NeumorphicColors.bg)
-            .padding(horizontal = 20.dp)
-            .padding(top = 18.dp)
-            .verticalScroll(rememberScrollState())
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Column {
-                Text("Hola, ${user?.name ?: "Valeria"}", fontSize = 14.sp, color = NeumorphicColors.muted)
-                Text("¿Qué quieres aprender?", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = NeumorphicColors.text)
-            }
-            Box(
-                modifier = Modifier
-                    .clickable { onNavigate("profile") }
-            ) {
-                NeumorphicLogo(user?.initials ?: "VR", size = 54.dp)
-            }
-        }
-
-        Spacer(modifier = Modifier.height(18.dp))
-
-        Row(
+        // Banner Superior Vibrante Celeste Eléctrico
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(56.dp)
-                .neumorphic(cornerRadius = 18.dp, isInnerShadow = false)
-                .background(NeumorphicColors.bg, RoundedCornerShape(18.dp))
-                .clickable { onNavigate("search") }
-                .padding(horizontal = 16.dp),
-            verticalAlignment = Alignment.CenterVertically
+                .background(
+                    androidx.compose.ui.graphics.Brush.horizontalGradient(
+                        listOf(Color(0xFF0099FF), Color(0xFF0066FF))
+                    )
+                )
+                .padding(horizontal = 20.dp, vertical = 20.dp)
         ) {
-            Icon(imageVector = Icons.Default.Search, contentDescription = "Buscar", tint = NeumorphicColors.muted)
-            Spacer(modifier = Modifier.width(12.dp))
-            Text("Busca una habilidad, ej. Guitarra", color = NeumorphicColors.muted, fontSize = 15.sp)
-        }
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        Text("Categorías", fontSize = 17.sp, fontWeight = FontWeight.Bold, color = NeumorphicColors.text)
-        Spacer(modifier = Modifier.height(12.dp))
-        
-        Column {
-            val chunks = viewModel.categories.chunked(2)
-            chunks.forEach { pair ->
+            Column {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    pair.forEach { category ->
-                        NeumorphicCard(
-                            modifier = Modifier
-                                .weight(1f)
-                                .padding(4.dp)
-                                .height(90.dp)
-                                .clickable { onNavigate("search") }
-                        ) {
-                            Column(
-                                modifier = Modifier.fillMaxSize(),
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.Center
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("¡Hola, ${user?.name ?: "Valeria"}! 👋", fontSize = 14.sp, color = Color.White.copy(alpha = 0.85f))
+                        Text("¿Qué quieres aprender hoy?", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                    }
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Box(
+                        modifier = Modifier.clickable { onNavigate("profile") }
+                    ) {
+                        NeumorphicLogo(
+                            initials = user?.initials ?: "VR",
+                            size = 50.dp,
+                            backgroundColor = NeumorphicColors.accentYellow,
+                            textColor = NeumorphicColors.text
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(18.dp))
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(52.dp)
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(Color.White)
+                        .clickable { onNavigate("search") }
+                        .padding(horizontal = 16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(imageVector = Icons.Default.Search, contentDescription = "Buscar", tint = NeumorphicColors.primary)
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text("Busca una habilidad o trueque, ej. Guitarra, Python...", color = NeumorphicColors.muted, fontSize = 14.sp)
+                }
+            }
+        }
+
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 20.dp)
+                .verticalScroll(rememberScrollState())
+        ) {
+            Spacer(modifier = Modifier.height(18.dp))
+
+            // Tarjeta Destacada de Trueque e Intercambio de Habilidades
+            NeumorphicCard(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { onNavigate("exchange") },
+                backgroundColor = Color(0xFFEFF6FF)
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        modifier = Modifier
+                            .size(46.dp)
+                            .background(NeumorphicColors.primary, CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(imageVector = Icons.Default.SwapHoriz, contentDescription = "Trueque", tint = Color.White, modifier = Modifier.size(26.dp))
+                    }
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("Trueque de Habilidades 🔄", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = NeumorphicColors.text)
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text("Enseña lo que sabes y aprende gratis lo que necesitas.", fontSize = 12.sp, color = NeumorphicColors.muted)
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            Text("Categorías", fontSize = 17.sp, fontWeight = FontWeight.Bold, color = NeumorphicColors.text)
+            Spacer(modifier = Modifier.height(12.dp))
+            
+            Column {
+                val chunks = viewModel.categories.chunked(2)
+                chunks.forEach { pair ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        pair.forEach { category ->
+                            NeumorphicCard(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .padding(4.dp)
+                                    .height(90.dp)
+                                    .clickable { onNavigate("search") },
+                                backgroundColor = Color.White
                             ) {
-                                Text(category.icon, fontSize = 22.sp, color = NeumorphicColors.primary)
-                                Spacer(modifier = Modifier.height(4.dp))
-                                Text(category.name, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = NeumorphicColors.text)
+                                Column(
+                                    modifier = Modifier.fillMaxSize(),
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.Center
+                                ) {
+                                    Text(category.icon, fontSize = 22.sp, color = NeumorphicColors.primary)
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(category.name, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = NeumorphicColors.text)
+                                }
                             }
                         }
                     }
                 }
             }
-        }
 
-        Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
-        NeumorphicCard(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable { onNavigate("ai") },
-            backgroundColor = Color(0xFFEAF8F2)
-        ) {
-            Column {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(imageVector = Icons.Default.AutoAwesome, contentDescription = "AI", tint = NeumorphicColors.green)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Asistente SkillMatch", fontSize = 17.sp, fontWeight = FontWeight.Bold, color = NeumorphicColors.text)
-                }
-                Spacer(modifier = Modifier.height(6.dp))
-                Text("Deja que la inteligencia artificial encuentre a tu mentor ideal según tus metas.", fontSize = 13.sp, color = NeumorphicColors.muted)
-            }
-        }
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text("Profesores recomendados", fontSize = 17.sp, fontWeight = FontWeight.Bold, color = NeumorphicColors.text)
-            Text(
-                "Ver todos",
-                fontSize = 13.sp,
-                fontWeight = FontWeight.Bold,
-                color = NeumorphicColors.primary,
-                modifier = Modifier.clickable { onNavigate("search") }
-            )
-        }
-
-        Spacer(modifier = Modifier.height(10.dp))
-
-        LazyRow(
-            contentPadding = PaddingValues(vertical = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(14.dp)
-        ) {
-            items(viewModel.mentors.take(4)) { mentor ->
-                NeumorphicCard(
-                    modifier = Modifier
-                        .width(200.dp)
-                        .clickable {
-                            viewModel.selectedMentorId = mentor.id
-                            onNavigate("mentor")
-                        }
-                ) {
-                    Column {
-                        NeumorphicLogo(
-                            initials = mentor.initials,
-                            backgroundColor = Color(android.graphics.Color.parseColor(mentor.accentColor)),
-                            size = 50.dp
-                        )
-                        Spacer(modifier = Modifier.height(10.dp))
-                        Text(mentor.name, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = NeumorphicColors.text)
-                        Text(mentor.specialty, fontSize = 12.sp, color = NeumorphicColors.muted)
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = "★ ${mentor.rating} · ${if (mentor.price == 0) "Gratis" else "S/ ${mentor.price}"}",
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = NeumorphicColors.primary
-                        )
-                    }
-                }
-            }
-        }
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text("Intercambios recientes", fontSize = 17.sp, fontWeight = FontWeight.Bold, color = NeumorphicColors.text)
-            Text(
-                "Ver todos",
-                fontSize = 13.sp,
-                fontWeight = FontWeight.Bold,
-                color = NeumorphicColors.primary,
-                modifier = Modifier.clickable { onNavigate("search") }
-            )
-        }
-
-        Spacer(modifier = Modifier.height(10.dp))
-
-        viewModel.exchanges.forEach { exchange ->
             NeumorphicCard(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 6.dp)
+                    .clickable { onNavigate("ai") },
+                backgroundColor = NeumorphicColors.primary
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    NeumorphicLogo(exchange.initials, size = 44.dp)
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Column {
-                        Text(exchange.title, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = NeumorphicColors.text)
-                        Text(exchange.subtitle, fontSize = 12.sp, color = NeumorphicColors.muted)
+                Column {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(imageVector = Icons.Default.AutoAwesome, contentDescription = "AI", tint = NeumorphicColors.accentYellow)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Asistente SkillMatch", fontSize = 17.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                    }
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text("Encuentra al mentor ideal según tus metas con inteligencia artificial.", fontSize = 13.sp, color = Color.White.copy(alpha = 0.9f))
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("Profesores recomendados", fontSize = 17.sp, fontWeight = FontWeight.Bold, color = NeumorphicColors.text)
+                Text(
+                    "Ver todos",
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = NeumorphicColors.primary,
+                    modifier = Modifier.clickable { onNavigate("search") }
+                )
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            LazyRow(
+                contentPadding = PaddingValues(vertical = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(14.dp)
+            ) {
+                items(viewModel.mentors.take(4)) { mentor ->
+                    NeumorphicCard(
+                        modifier = Modifier
+                            .width(200.dp)
+                            .clickable {
+                                viewModel.selectedMentorId = mentor.id
+                                onNavigate("mentor")
+                            },
+                        backgroundColor = Color.White
+                    ) {
+                        Column {
+                            NeumorphicLogo(
+                                initials = mentor.initials,
+                                backgroundColor = Color(android.graphics.Color.parseColor(mentor.accentColor)),
+                                size = 50.dp
+                            )
+                            Spacer(modifier = Modifier.height(10.dp))
+                            Text(mentor.name, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = NeumorphicColors.text)
+                            Text(mentor.specialty, fontSize = 12.sp, color = NeumorphicColors.muted)
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = "★ ${mentor.rating} · ${if (mentor.price == 0) "Gratis" else "S/ ${mentor.price}"}",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = NeumorphicColors.primary
+                            )
+                        }
                     }
                 }
             }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("Intercambios recientes (Trueques)", fontSize = 17.sp, fontWeight = FontWeight.Bold, color = NeumorphicColors.text)
+                Text(
+                    "Ver todos",
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = NeumorphicColors.primary,
+                    modifier = Modifier.clickable { onNavigate("search") }
+                )
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            viewModel.exchanges.forEach { exchange ->
+                NeumorphicCard(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 6.dp),
+                    backgroundColor = Color.White
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        NeumorphicLogo(exchange.initials, size = 44.dp, backgroundColor = NeumorphicColors.primary)
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column {
+                            Text(exchange.title, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = NeumorphicColors.text)
+                            Text(exchange.subtitle, fontSize = 12.sp, color = NeumorphicColors.muted)
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
         }
-        Spacer(modifier = Modifier.height(24.dp))
     }
 }
 
@@ -678,7 +740,8 @@ fun SearchScreen(
     viewModel: SkillConnectViewModel,
     filter: String,
     onFilterChange: (String) -> Unit,
-    onMentorSelect: (Int) -> Unit
+    onMentorSelect: (Int) -> Unit,
+    onBack: () -> Unit
 ) {
     var query by remember { mutableStateOf("") }
     val filters = listOf("Todos", "Virtual", "Presencial", "Gratis", "Intercambio", "Pagado")
@@ -687,69 +750,74 @@ fun SearchScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(NeumorphicColors.bg)
-            .padding(20.dp)
     ) {
-        Text("Buscar", fontSize = 27.sp, fontWeight = FontWeight.Bold, color = NeumorphicColors.text)
-        Spacer(modifier = Modifier.height(14.dp))
-
-        NeumorphicTextField(
-            value = query,
-            onValueChange = { query = it },
-            placeholder = "Ej. Piano, Python, Inglés..."
-        )
-
-        Spacer(modifier = Modifier.height(14.dp))
-
-        LazyRow(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            contentPadding = PaddingValues(vertical = 4.dp)
+        NeumorphicTopBar("Explorar Mentores", onBack, isDarkHeader = true)
+        
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(20.dp)
         ) {
-            items(filters) { f ->
-                NeumorphicChip(
-                    text = f,
-                    selected = filter == f,
-                    onClick = { onFilterChange(f) }
-                )
+            NeumorphicTextField(
+                value = query,
+                onValueChange = { query = it },
+                placeholder = "Ej. Piano, Python, Inglés..."
+            )
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            LazyRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                contentPadding = PaddingValues(vertical = 4.dp)
+            ) {
+                items(filters) { f ->
+                    NeumorphicChip(
+                        text = f,
+                        selected = filter == f,
+                        onClick = { onFilterChange(f) }
+                    )
+                }
             }
-        }
 
-        Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-        val results = viewModel.searchMentors(query, filter)
-        Text("${results.size} resultados encontrados", fontSize = 13.sp, color = NeumorphicColors.muted)
-        Spacer(modifier = Modifier.height(8.dp))
+            val results = viewModel.searchMentors(query, filter)
+            Text("${results.size} resultados encontrados", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = NeumorphicColors.muted)
+            Spacer(modifier = Modifier.height(8.dp))
 
-        LazyColumn(
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-            modifier = Modifier.weight(1f)
-        ) {
-            items(results) { mentor ->
-                NeumorphicCard(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { onMentorSelect(mentor.id) }
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        NeumorphicLogo(
-                            initials = mentor.initials,
-                            backgroundColor = Color(android.graphics.Color.parseColor(mentor.accentColor)),
-                            size = 46.dp
-                        )
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(mentor.name, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = NeumorphicColors.text)
-                            Text(
-                                "${mentor.specialty} · ★ ${mentor.rating}",
-                                fontSize = 13.sp,
-                                color = NeumorphicColors.muted
+            LazyColumn(
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier.weight(1f)
+            ) {
+                items(results) { mentor ->
+                    NeumorphicCard(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { onMentorSelect(mentor.id) },
+                        backgroundColor = Color.White
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            NeumorphicLogo(
+                                initials = mentor.initials,
+                                backgroundColor = Color(android.graphics.Color.parseColor(mentor.accentColor)),
+                                size = 46.dp
                             )
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text(
-                                text = if (mentor.price == 0) "Gratis" else "S/ ${mentor.price} por hora",
-                                fontSize = 13.sp,
-                                color = NeumorphicColors.green,
-                                fontWeight = FontWeight.Bold
-                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(mentor.name, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = NeumorphicColors.text)
+                                Text(
+                                    "${mentor.specialty} · ★ ${mentor.rating}",
+                                    fontSize = 13.sp,
+                                    color = NeumorphicColors.muted
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = if (mentor.price == 0) "Gratis" else "S/ ${mentor.price} por hora",
+                                    fontSize = 13.sp,
+                                    color = NeumorphicColors.primary,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
                         }
                     }
                 }
@@ -839,11 +907,15 @@ fun MentorScreen(
         Spacer(modifier = Modifier.height(28.dp))
 
         NeumorphicButton(onClick = onBooking, modifier = Modifier.fillMaxWidth()) {
-            Text("Reservar clase", color = NeumorphicColors.primary, fontWeight = FontWeight.Bold)
+            Text("Reservar clase", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
         }
         Spacer(modifier = Modifier.height(12.dp))
-        NeumorphicButton(onClick = onExchange, modifier = Modifier.fillMaxWidth()) {
-            Text("Solicitar intercambio", color = NeumorphicColors.muted, fontWeight = FontWeight.Bold)
+        NeumorphicButton(
+            onClick = onExchange,
+            gradientBrush = ButtonGradients.VioletCyan,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Solicitar intercambio (Trueque)", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
         }
         Spacer(modifier = Modifier.height(20.dp))
     }
@@ -941,7 +1013,7 @@ fun BookingScreen(viewModel: SkillConnectViewModel, onFinished: () -> Unit, onBa
             },
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text("Confirmar reserva", color = NeumorphicColors.primary, fontWeight = FontWeight.Bold)
+            Text("Confirmar reserva", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
         }
     }
 }
@@ -1008,7 +1080,7 @@ fun ExchangeScreen(viewModel: SkillConnectViewModel, onFinished: () -> Unit, onB
             },
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text("Enviar solicitud", color = NeumorphicColors.primary, fontWeight = FontWeight.Bold)
+            Text("Enviar propuesta de trueque", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
         }
     }
 }
@@ -1216,7 +1288,7 @@ fun ProfileScreen(viewModel: SkillConnectViewModel, onNavigate: (String) -> Unit
                 )
                 Spacer(modifier = Modifier.height(16.dp))
                 NeumorphicButton(onClick = { /* Edit */ }) {
-                    Text("Editar perfil", color = NeumorphicColors.primary, fontWeight = FontWeight.Bold)
+                    Text("Editar perfil", color = Color.White, fontWeight = FontWeight.Bold)
                 }
             }
         }
@@ -1267,14 +1339,15 @@ fun ProfileScreen(viewModel: SkillConnectViewModel, onNavigate: (String) -> Unit
 
         Spacer(modifier = Modifier.height(20.dp))
 
-        // Botón neumórfico para Cerrar Sesión
+        // Botón neumórfico para Cerrar Sesión con gradiente Rojo Coral y texto Blanco
         NeumorphicButton(
             onClick = { viewModel.logout() },
+            gradientBrush = ButtonGradients.CoralRose,
             modifier = Modifier.fillMaxWidth()
         ) {
-            Icon(imageVector = Icons.Default.ExitToApp, contentDescription = "Cerrar sesión", tint = Color.Red)
+            Icon(imageVector = Icons.Default.ExitToApp, contentDescription = "Cerrar sesión", tint = Color.White)
             Spacer(modifier = Modifier.width(8.dp))
-            Text("Cerrar sesión", color = Color.Red, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+            Text("Cerrar sesión", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 15.sp)
         }
         Spacer(modifier = Modifier.height(30.dp))
     }
