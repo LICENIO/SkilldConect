@@ -160,7 +160,9 @@ fun NeumorphicTextField(
     singleLine: Boolean = true,
     visualTransformation: VisualTransformation = VisualTransformation.None,
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
-    keyboardActions: KeyboardActions = KeyboardActions.Default
+    keyboardActions: KeyboardActions = KeyboardActions.Default,
+    leadingIcon: @Composable (() -> Unit)? = null,
+    trailingIcon: @Composable (() -> Unit)? = null
 ) {
     val heightModifier = if (singleLine) Modifier.height(54.dp) else Modifier.height(100.dp)
     
@@ -183,18 +185,33 @@ fun NeumorphicTextField(
             .background(Color.White, RoundedCornerShape(16.dp))
             .padding(horizontal = 16.dp, vertical = if (singleLine) 0.dp else 12.dp),
         decorationBox = { innerTextField ->
-            Box(
+            Row(
                 modifier = Modifier.fillMaxSize(),
-                contentAlignment = if (singleLine) Alignment.CenterStart else Alignment.TopStart
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                if (value.isEmpty()) {
-                    Text(
-                        text = placeholder,
-                        color = NeumorphicColors.muted,
-                        fontSize = 15.sp
-                    )
+                if (leadingIcon != null) {
+                    leadingIcon()
+                    Spacer(modifier = Modifier.width(12.dp))
                 }
-                innerTextField()
+                
+                Box(
+                    modifier = Modifier.weight(1f),
+                    contentAlignment = if (singleLine) Alignment.CenterStart else Alignment.TopStart
+                ) {
+                    if (value.isEmpty()) {
+                        Text(
+                            text = placeholder,
+                            color = NeumorphicColors.muted,
+                            fontSize = 15.sp
+                        )
+                    }
+                    innerTextField()
+                }
+
+                if (trailingIcon != null) {
+                    Spacer(modifier = Modifier.width(12.dp))
+                    trailingIcon()
+                }
             }
         }
     )

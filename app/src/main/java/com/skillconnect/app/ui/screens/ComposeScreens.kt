@@ -25,6 +25,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -163,6 +164,9 @@ fun LoginScreen(viewModel: SkillConnectViewModel, onSuccess: () -> Unit, onRegis
 
     var email by remember { mutableStateOf("valeria.rios@ejemplo.com") }
     var password by remember { mutableStateOf("12345678") }
+    var passwordVisible by remember { mutableStateOf(false) }
+    var rememberMe by remember { mutableStateOf(true) }
+    var isLoading by remember { mutableStateOf(false) }
     var showSimulatedAuth by remember { mutableStateOf(false) }
 
     fun triggerBiometricAuth() {
@@ -181,7 +185,7 @@ fun LoginScreen(viewModel: SkillConnectViewModel, onSuccess: () -> Unit, onRegis
                     scope.launch {
                         val authSuccess = viewModel.loginWithBiometrics()
                         if (authSuccess) {
-                            Toast.makeText(context, "Bienvenido de nuevo, ${viewModel.currentUser?.name}", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, "¡Bienvenida de nuevo!", Toast.LENGTH_SHORT).show()
                             onSuccess()
                         } else {
                             showSimulatedAuth = true
@@ -220,150 +224,256 @@ fun LoginScreen(viewModel: SkillConnectViewModel, onSuccess: () -> Unit, onRegis
             .background(NeumorphicColors.bg)
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
-            NeumorphicTopBar("Iniciar sesión", onBack, isDarkHeader = true)
+            NeumorphicTopBar("Acceso a SkillConnect", onBack, isDarkHeader = true)
             
             Column(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(24.dp)
-                    .verticalScroll(rememberScrollState())
+                    .verticalScroll(rememberScrollState()),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                // Logo Animado o Destacado
+                NeumorphicLogo(
+                    initials = "SC", 
+                    size = 90.dp, 
+                    backgroundColor = NeumorphicColors.primary,
+                    elevation = 10.dp
+                )
+                
+                Spacer(modifier = Modifier.height(24.dp))
+                
                 Text(
-                    text = "Bienvenido de nuevo",
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = NeumorphicColors.text
+                    text = "Bienvenida de nuevo",
+                    fontSize = 26.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = NeumorphicColors.text,
+                    textAlign = TextAlign.Center
                 )
                 Text(
-                    text = "Ingresa tus datos o usa tu huella digital para continuar aprendiendo.",
-                    fontSize = 14.sp,
+                    text = "Aprende, enseña y conecta con expertos.",
+                    fontSize = 15.sp,
                     color = NeumorphicColors.muted,
-                    modifier = Modifier.padding(top = 4.dp, bottom = 28.dp)
+                    modifier = Modifier.padding(top = 4.dp, bottom = 32.dp),
+                    textAlign = TextAlign.Center
                 )
 
-                Text("Correo electrónico", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = NeumorphicColors.text)
-                Spacer(modifier = Modifier.height(8.dp))
-                NeumorphicTextField(
-                    value = email,
-                    onValueChange = { email = it },
-                    placeholder = "ejemplo@correo.com"
-                )
+                // Campo: Correo
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Text("Correo electrónico", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = NeumorphicColors.text)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    NeumorphicTextField(
+                        value = email,
+                        onValueChange = { email = it },
+                        placeholder = "ejemplo@correo.com",
+                        leadingIcon = {
+                            Icon(Icons.Default.Email, contentDescription = null, tint = NeumorphicColors.primary, modifier = Modifier.size(20.dp))
+                        }
+                    )
+                }
 
                 Spacer(modifier = Modifier.height(20.dp))
 
-                Text("Contraseña", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = NeumorphicColors.text)
-                Spacer(modifier = Modifier.height(8.dp))
-                NeumorphicTextField(
-                    value = password,
-                    onValueChange = { password = it },
-                    placeholder = "Contraseña de 8 dígitos",
-                    visualTransformation = PasswordVisualTransformation()
-                )
+                // Campo: Contraseña
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Text("Contraseña", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = NeumorphicColors.text)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    NeumorphicTextField(
+                        value = password,
+                        onValueChange = { password = it },
+                        placeholder = "Ingresa tu clave",
+                        visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                        leadingIcon = {
+                            Icon(Icons.Default.Lock, contentDescription = null, tint = NeumorphicColors.primary, modifier = Modifier.size(20.dp))
+                        },
+                        trailingIcon = {
+                            IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                                Icon(
+                                    imageVector = if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                                    contentDescription = null,
+                                    tint = NeumorphicColors.muted,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                        }
+                    )
+                }
 
-                Spacer(modifier = Modifier.height(28.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
+                // Fila: Recordarme y Olvidé mi clave
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Switch(
+                            checked = rememberMe,
+                            onCheckedChange = { rememberMe = it },
+                            colors = SwitchDefaults.colors(checkedThumbColor = NeumorphicColors.primary)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Recordarme", fontSize = 13.sp, color = NeumorphicColors.text)
+                    }
+                    Text(
+                        text = "¿Olvidaste tu clave?",
+                        fontSize = 13.sp,
+                        color = NeumorphicColors.primary,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.clickable { /* logic */ }
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(32.dp))
+
+                // Botón Ingresar + Huella
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     NeumorphicButton(
                         onClick = {
-                            scope.launch {
-                                val success = viewModel.loginWithEmail(email, password)
-                                if (success) {
-                                    Toast.makeText(context, "Bienvenido, ${viewModel.currentUser?.name}", Toast.LENGTH_SHORT).show()
-                                    onSuccess()
-                                } else {
-                                    Toast.makeText(context, "Correo o contraseña incorrectos", Toast.LENGTH_SHORT).show()
+                            if (email.isNotBlank() && password.length >= 4) {
+                                isLoading = true
+                                scope.launch {
+                                    val success = viewModel.loginWithEmail(email, password)
+                                    isLoading = false
+                                    if (success) {
+                                        Toast.makeText(context, "¡Hola de nuevo!", Toast.LENGTH_SHORT).show()
+                                        onSuccess()
+                                    } else {
+                                        Toast.makeText(context, "Credenciales incorrectas", Toast.LENGTH_SHORT).show()
+                                    }
                                 }
+                            } else {
+                                Toast.makeText(context, "Completa los campos correctamente", Toast.LENGTH_SHORT).show()
                             }
                         },
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.weight(1f),
+                        gradientBrush = if (isLoading) null else ButtonGradients.SunsetGold,
+                        backgroundColor = if (isLoading) Color.LightGray else NeumorphicColors.primary
                     ) {
-                        Text("Ingresar", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                        if (isLoading) {
+                            CircularProgressIndicator(color = Color.White, modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Text("Validando...", color = Color.White, fontWeight = FontWeight.Bold)
+                        } else {
+                            Text("Entrar ahora", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                        }
                     }
 
                     Spacer(modifier = Modifier.width(18.dp))
 
+                    // Botón Huella Digital Mejorado
                     Box(
                         modifier = Modifier
                             .size(54.dp)
                             .neumorphic(cornerRadius = 16.dp)
-                            .background(NeumorphicColors.primary, RoundedCornerShape(16.dp))
+                            .background(Color.White, RoundedCornerShape(16.dp))
                             .clickable { triggerBiometricAuth() },
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             imageVector = Icons.Default.Fingerprint,
-                            contentDescription = "Iniciar con huella",
-                            tint = Color.White,
-                            modifier = Modifier.size(32.dp)
+                            contentDescription = "Huella",
+                            tint = NeumorphicColors.primary,
+                            modifier = Modifier.size(30.dp)
                         )
                     }
                 }
 
-                Spacer(modifier = Modifier.height(34.dp))
+                Spacer(modifier = Modifier.height(32.dp))
 
-                Text(
-                    text = "¿No tienes cuenta? Regístrate aquí",
-                    color = NeumorphicColors.primary,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 14.sp,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { onRegister() }
-                )
+                // Login Social (Google)
+                NeumorphicButton(
+                    onClick = { /* Google Login logic */ },
+                    modifier = Modifier.fillMaxWidth(),
+                    gradientBrush = null,
+                    backgroundColor = Color.White
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.AccountCircle, // Simula icono de Google
+                        contentDescription = null,
+                        tint = Color(0xFFEA4335),
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text("Continuar con Google", color = NeumorphicColors.text, fontWeight = FontWeight.Bold)
+                }
+
+                Spacer(modifier = Modifier.height(40.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Text("¿Eres nueva? ", color = NeumorphicColors.muted, fontSize = 14.sp)
+                    Text(
+                        text = "Crea una cuenta aquí",
+                        color = NeumorphicColors.primary,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 14.sp,
+                        modifier = Modifier.clickable { onRegister() }
+                    )
+                }
+                
+                Spacer(modifier = Modifier.height(20.dp))
             }
         }
 
+        // Modal de Huella Mejorado
         if (showSimulatedAuth) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.4f)),
+                    .background(Color.Black.copy(alpha = 0.5f))
+                    .clickable { showSimulatedAuth = false },
                 contentAlignment = Alignment.Center
             ) {
                 NeumorphicCard(
                     modifier = Modifier
                         .fillMaxWidth(0.85f)
-                        .padding(16.dp),
-                    cornerRadius = 24.dp,
+                        .padding(16.dp)
+                        .clickable(enabled = false) { },
+                    cornerRadius = 28.dp,
                     backgroundColor = Color.White
                 ) {
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier.padding(8.dp)
+                        modifier = Modifier.padding(12.dp)
                     ) {
                         Text(
-                            text = "Acceso con Huella",
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 18.sp,
+                            text = "Acceso Biométrico",
+                            fontWeight = FontWeight.ExtraBold,
+                            fontSize = 20.sp,
                             color = NeumorphicColors.text
                         )
-                        Spacer(modifier = Modifier.height(8.dp))
+                        Spacer(modifier = Modifier.height(10.dp))
                         Text(
-                            text = "Simula el lector biométrico tocando el botón inferior",
-                            fontSize = 13.sp,
+                            text = "Toca el sensor para verificar tu identidad",
+                            fontSize = 14.sp,
                             color = NeumorphicColors.muted,
                             textAlign = TextAlign.Center
                         )
-                        Spacer(modifier = Modifier.height(28.dp))
+                        Spacer(modifier = Modifier.height(32.dp))
                         
                         Box(
                             modifier = Modifier
-                                .size(90.dp)
-                                .neumorphic(cornerRadius = 45.dp, shadowRadius = 8.dp)
-                                .background(NeumorphicColors.primary, CircleShape)
+                                .size(100.dp)
+                                .neumorphic(cornerRadius = 50.dp, shadowRadius = 10.dp)
+                                .background(NeumorphicColors.bg, CircleShape)
                                 .clickable {
                                     scope.launch {
                                         val success = viewModel.loginWithBiometrics()
                                         if (success) {
                                             showSimulatedAuth = false
-                                            Toast.makeText(context, "Huella verificada. ¡Bienvenido, ${viewModel.currentUser?.name}!", Toast.LENGTH_SHORT).show()
+                                            Toast.makeText(context, "Huella verificada", Toast.LENGTH_SHORT).show()
                                             onSuccess()
                                         } else {
-                                            Toast.makeText(context, "No hay ningún usuario registrado aún", Toast.LENGTH_SHORT).show()
+                                            Toast.makeText(context, "Registra una cuenta primero", Toast.LENGTH_SHORT).show()
                                         }
                                     }
                                 },
@@ -372,19 +482,21 @@ fun LoginScreen(viewModel: SkillConnectViewModel, onSuccess: () -> Unit, onRegis
                             Icon(
                                 imageVector = Icons.Default.Fingerprint,
                                 contentDescription = "Huella",
-                                tint = NeumorphicColors.accentYellow,
-                                modifier = Modifier.size(48.dp)
+                                tint = NeumorphicColors.primary,
+                                modifier = Modifier.size(54.dp)
                             )
                         }
 
-                        Spacer(modifier = Modifier.height(24.dp))
-                        NeumorphicButton(
-                            onClick = { showSimulatedAuth = false },
-                            backgroundColor = Color(0xFFE2E8F0),
-                            modifier = Modifier.fillMaxWidth(0.7f)
-                        ) {
-                            Text("Cancelar", color = NeumorphicColors.text, fontWeight = FontWeight.Bold)
-                        }
+                        Spacer(modifier = Modifier.height(32.dp))
+                        
+                        Text(
+                            text = "Cancelar",
+                            color = NeumorphicColors.muted,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier
+                                .clickable { showSimulatedAuth = false }
+                                .padding(8.dp)
+                        )
                     }
                 }
             }

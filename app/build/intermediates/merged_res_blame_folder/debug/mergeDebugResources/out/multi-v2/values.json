@@ -207,9 +207,9 @@
                     "from": {
                         "startLines": "2,4,3",
                         "startColumns": "4,4,4",
-                        "startOffsets": "55,143,98",
+                        "startOffsets": "57,147,101",
                         "endColumns": "42,47,44",
-                        "endOffsets": "93,186,138"
+                        "endOffsets": "95,190,141"
                     },
                     "to": {
                         "startLines": "106,107,108",
