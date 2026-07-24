@@ -2,6 +2,7 @@ package com.skillconnect.app.ui.screens
 
 import android.graphics.Color as AndroidColor
 import android.widget.Toast
+import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricPrompt
 import androidx.compose.animation.*
 import androidx.compose.foundation.background
@@ -167,11 +168,18 @@ fun LoginScreen(viewModel: SkillConnectViewModel, onSuccess: () -> Unit, onRegis
     var passwordVisible by remember { mutableStateOf(false) }
     var rememberMe by remember { mutableStateOf(true) }
     var isLoading by remember { mutableStateOf(false) }
-    var showSimulatedAuth by remember { mutableStateOf(false) }
 
     fun triggerBiometricAuth() {
         if (activity == null) {
-            showSimulatedAuth = true
+            Toast.makeText(context, "Error: Actividad no encontrada", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val biometricManager = BiometricManager.from(context)
+        val canAuthenticate = biometricManager.canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_STRONG or BiometricManager.Authenticators.BIOMETRIC_WEAK)
+        
+        if (canAuthenticate != BiometricManager.BIOMETRIC_SUCCESS) {
+            Toast.makeText(context, "Biometría no disponible o no configurada", Toast.LENGTH_SHORT).show()
             return
         }
 
@@ -188,14 +196,14 @@ fun LoginScreen(viewModel: SkillConnectViewModel, onSuccess: () -> Unit, onRegis
                             Toast.makeText(context, "¡Bienvenida de nuevo!", Toast.LENGTH_SHORT).show()
                             onSuccess()
                         } else {
-                            showSimulatedAuth = true
+                            Toast.makeText(context, "Registra una cuenta primero", Toast.LENGTH_SHORT).show()
                         }
                     }
                 }
 
                 override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
                     super.onAuthenticationError(errorCode, errString)
-                    showSimulatedAuth = true
+                    Toast.makeText(context, "Error: $errString", Toast.LENGTH_SHORT).show()
                 }
 
                 override fun onAuthenticationFailed() {
@@ -214,7 +222,7 @@ fun LoginScreen(viewModel: SkillConnectViewModel, onSuccess: () -> Unit, onRegis
         try {
             biometricPrompt.authenticate(promptInfo)
         } catch (e: Exception) {
-            showSimulatedAuth = true
+            Toast.makeText(context, "Ocurrió un error al iniciar biometría", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -423,84 +431,6 @@ fun LoginScreen(viewModel: SkillConnectViewModel, onSuccess: () -> Unit, onRegis
                 Spacer(modifier = Modifier.height(20.dp))
             }
         }
-
-        // Modal de Huella Mejorado
-        if (showSimulatedAuth) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.5f))
-                    .clickable { showSimulatedAuth = false },
-                contentAlignment = Alignment.Center
-            ) {
-                NeumorphicCard(
-                    modifier = Modifier
-                        .fillMaxWidth(0.85f)
-                        .padding(16.dp)
-                        .clickable(enabled = false) { },
-                    cornerRadius = 28.dp,
-                    backgroundColor = Color.White
-                ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier.padding(12.dp)
-                    ) {
-                        Text(
-                            text = "Acceso Biométrico",
-                            fontWeight = FontWeight.ExtraBold,
-                            fontSize = 20.sp,
-                            color = NeumorphicColors.text
-                        )
-                        Spacer(modifier = Modifier.height(10.dp))
-                        Text(
-                            text = "Toca el sensor para verificar tu identidad",
-                            fontSize = 14.sp,
-                            color = NeumorphicColors.muted,
-                            textAlign = TextAlign.Center
-                        )
-                        Spacer(modifier = Modifier.height(32.dp))
-                        
-                        Box(
-                            modifier = Modifier
-                                .size(100.dp)
-                                .neumorphic(cornerRadius = 50.dp, shadowRadius = 10.dp)
-                                .background(NeumorphicColors.bg, CircleShape)
-                                .clickable {
-                                    scope.launch {
-                                        val success = viewModel.loginWithBiometrics()
-                                        if (success) {
-                                            showSimulatedAuth = false
-                                            Toast.makeText(context, "Huella verificada", Toast.LENGTH_SHORT).show()
-                                            onSuccess()
-                                        } else {
-                                            Toast.makeText(context, "Registra una cuenta primero", Toast.LENGTH_SHORT).show()
-                                        }
-                                    }
-                                },
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Fingerprint,
-                                contentDescription = "Huella",
-                                tint = NeumorphicColors.primary,
-                                modifier = Modifier.size(54.dp)
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.height(32.dp))
-                        
-                        Text(
-                            text = "Cancelar",
-                            color = NeumorphicColors.muted,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier
-                                .clickable { showSimulatedAuth = false }
-                                .padding(8.dp)
-                        )
-                    }
-                }
-            }
-        }
     }
 }
 
@@ -514,7 +444,65 @@ fun RegisterScreen(viewModel: SkillConnectViewModel, onSuccess: () -> Unit, onLo
     val options = listOf("Aprender", "Enseñar", "Ambos")
     
     val context = LocalContext.current
+    val activity = context as? FragmentActivity
     val scope = rememberCoroutineScope()
+
+    fun triggerBiometricRegister() {
+        if (activity == null) {
+            Toast.makeText(context, "Error: Actividad no encontrada", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val biometricManager = BiometricManager.from(context)
+        val canAuthenticate = biometricManager.canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_STRONG or BiometricManager.Authenticators.BIOMETRIC_WEAK)
+        
+        if (canAuthenticate != BiometricManager.BIOMETRIC_SUCCESS) {
+            Toast.makeText(context, "Biometría no disponible o no configurada", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val executor = ContextCompat.getMainExecutor(activity)
+        val biometricPrompt = BiometricPrompt(
+            activity,
+            executor,
+            object : BiometricPrompt.AuthenticationCallback() {
+                override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
+                    super.onAuthenticationSucceeded(result)
+                    scope.launch {
+                        val success = viewModel.quickRegisterWithBiometrics()
+                        if (success) {
+                            Toast.makeText(context, "Cuenta rápida creada con éxito", Toast.LENGTH_SHORT).show()
+                            onSuccess()
+                        } else {
+                            Toast.makeText(context, "Error al crear cuenta rápida", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                }
+
+                override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
+                    super.onAuthenticationError(errorCode, errString)
+                    Toast.makeText(context, "Error: $errString", Toast.LENGTH_SHORT).show()
+                }
+
+                override fun onAuthenticationFailed() {
+                    super.onAuthenticationFailed()
+                    Toast.makeText(context, "Autenticación fallida", Toast.LENGTH_SHORT).show()
+                }
+            }
+        )
+
+        val promptInfo = BiometricPrompt.PromptInfo.Builder()
+            .setTitle("Registro Rápido")
+            .setSubtitle("Crea una cuenta rápida con tu huella")
+            .setNegativeButtonText("Cancelar")
+            .build()
+
+        try {
+            biometricPrompt.authenticate(promptInfo)
+        } catch (e: Exception) {
+            Toast.makeText(context, "Ocurrió un error al iniciar biometría", Toast.LENGTH_SHORT).show()
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -581,6 +569,18 @@ fun RegisterScreen(viewModel: SkillConnectViewModel, onSuccess: () -> Unit, onLo
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Registrarme", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            NeumorphicButton(
+                onClick = { triggerBiometricRegister() },
+                modifier = Modifier.fillMaxWidth(),
+                backgroundColor = Color.White
+            ) {
+                Icon(Icons.Default.Fingerprint, contentDescription = null, tint = NeumorphicColors.primary, modifier = Modifier.size(20.dp))
+                Spacer(modifier = Modifier.width(12.dp))
+                Text("Registro Rápido con Huella", color = NeumorphicColors.text, fontWeight = FontWeight.Bold, fontSize = 15.sp)
             }
 
             Spacer(modifier = Modifier.height(24.dp))

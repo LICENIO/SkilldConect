@@ -105,6 +105,16 @@ class SkillConnectViewModel(
         }
     }
 
+    suspend fun quickRegisterWithBiometrics(): Boolean {
+        val randomId = (10000..99999).random()
+        val email = "huella$randomId@skillconnect.app"
+        val name = "Usuario Rápido"
+        val password = "biometric_quick_password"
+        
+        return registerUser(name, email, password, "Ambos")
+    }
+
+
     suspend fun registerUser(name: String, email: String, password: String, role: String): Boolean {
         val cleanEmail = email.trim().lowercase()
         if (cleanEmail.isEmpty() || password.length < 4 || name.trim().isEmpty()) return false
