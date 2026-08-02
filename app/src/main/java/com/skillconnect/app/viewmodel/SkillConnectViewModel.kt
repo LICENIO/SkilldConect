@@ -22,6 +22,10 @@ class SkillConnectViewModel(
     var currentUser by mutableStateOf<UserEntity?>(null)
         private set
 
+    // Usuario previamente guardado (para login rápido Yape)
+    var savedUser by mutableStateOf<UserEntity?>(null)
+        private set
+
     // Estados reactivos para la UI
     var categories by mutableStateOf<List<Category>>(emptyList())
         private set
@@ -48,9 +52,9 @@ class SkillConnectViewModel(
             // Por defecto, intentar iniciar con el último usuario registrado
             val lastUser = repository.getLastRegisteredUser()
             if (lastUser != null) {
-                activeUserEmail = lastUser.email
-                currentUser = lastUser
-                refreshAll()
+                savedUser = lastUser
+                // NOTA: Ya no logueamos automáticamente (activeUserEmail = lastUser.email)
+                // para obligar al usuario a usar la huella (estilo Yape).
             }
         }
     }
@@ -79,25 +83,56 @@ class SkillConnectViewModel(
     }
 
     // --- LÓGICA DE INICIO DE SESIÓN Y REGISTRO ---
+    
+    sealed class LoginResult {
+        object Success : LoginResult()
+        object UserNotFound : LoginResult()
+        object IncorrectPassword : LoginResult()
+    }
 
-    suspend fun loginWithEmail(email: String, password: String): Boolean {
+    suspend fun loginWithEmail(email: String, password: String, rememberMe: Boolean = true): LoginResult {
         val cleanEmail = email.trim().lowercase()
+        val userByEmail = repository.getUserByEmail(cleanEmail)
+        
+        if (userByEmail == null) {
+            return LoginResult.UserNotFound
+        }
+        
         val user = repository.getUser(cleanEmail, password)
         return if (user != null) {
+            if (rememberMe) {
+                repository.saveLastLoggedInEmail(user.email)
+            } else {
+                repository.clearLastLoggedInEmail()
+            }
             activeUserEmail = user.email
             currentUser = user
+            savedUser = user
             refreshAll()
+            LoginResult.Success
+        } else {
+            LoginResult.IncorrectPassword
+        }
+    }
+
+    suspend fun resetPassword(email: String, newPass: String): Boolean {
+        val cleanEmail = email.trim().lowercase()
+        val user = repository.getUserByEmail(cleanEmail)
+        return if (user != null) {
+            repository.updateUser(user.copy(password = newPass))
             true
         } else {
             false
         }
     }
 
+
     suspend fun loginWithBiometrics(): Boolean {
         val lastUser = repository.getLastRegisteredUser()
         return if (lastUser != null) {
             activeUserEmail = lastUser.email
             currentUser = lastUser
+            savedUser = lastUser
             refreshAll()
             true
         } else {
@@ -111,6 +146,12 @@ class SkillConnectViewModel(
         val name = "Usuario Rápido"
         val password = "biometric_quick_password"
         
+        return registerUser(name, email, password, "Ambos")
+    }
+
+    suspend fun registerAfterBiometric(name: String, password: String): Boolean {
+        val randomId = (10000..99999).random()
+        val email = "huella$randomId@skillconnect.app"
         return registerUser(name, email, password, "Ambos")
     }
 
@@ -139,11 +180,26 @@ class SkillConnectViewModel(
 
         repository.registerUser(newUser)
         repository.initializeUserSeeds(cleanEmail) // Crear semillas específicas
+        repository.saveLastLoggedInEmail(newUser.email)
         
         activeUserEmail = newUser.email
         currentUser = newUser
+        savedUser = newUser
         refreshAll()
         return true
+    }
+
+    fun updateUserName(newName: String) {
+        val current = currentUser ?: return
+        val initials = newName.split(" ").mapNotNull { it.firstOrNull()?.uppercase() }.take(2).joinToString("")
+        val updatedUser = current.copy(name = newName, initials = initials)
+        
+        viewModelScope.launch {
+            repository.updateUser(updatedUser)
+            currentUser = updatedUser
+            savedUser = updatedUser
+            refreshAll()
+        }
     }
 
     fun logout() {

@@ -3,5 +3,6 @@ local
 color skill_bg
 color skill_primary
 color skill_text
+drawable logo
 string app_name
 style Theme.SkillConnect

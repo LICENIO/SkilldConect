@@ -1,8 +1,11 @@
 package com.skillconnect.app.data.repository
 
+import android.content.Context
 import com.skillconnect.app.data.model.*
 
-class SkillConnectRepository(private val db: SkillConnectDatabase) {
+class SkillConnectRepository(private val db: SkillConnectDatabase, private val context: Context) {
+    private val prefs = context.getSharedPreferences("SkillConnectPrefs", Context.MODE_PRIVATE)
+
     private val userDao = db.userDao()
     private val categoryDao = db.categoryDao()
     private val mentorDao = db.mentorDao()
@@ -136,22 +139,9 @@ class SkillConnectRepository(private val db: SkillConnectDatabase) {
             ).map { ExchangeEntity.fromDomain(it) }
             exchangeDao.insertAll(mockExchanges)
         }
-
-        // 4. Crear usuario por defecto (Valeria Ríos) si no hay ningún usuario registrado
-        if (userDao.getUsersCount() == 0) {
-            val defaultUser = UserEntity(
-                email = "valeria.rios@ejemplo.com",
-                name = "Valeria Ríos",
-                password = "12345678",
-                role = "Ambos",
-                initials = "VR"
-            )
-            userDao.insert(defaultUser)
-            initializeUserSeeds(defaultUser.email)
-        }
     }
 
-    // Inicializar datos semilla para un usuario específico (para Valeria o nuevos registrados)
+    // Inicializar datos semilla para un usuario específico (para nuevos registrados)
     suspend fun initializeUserSeeds(email: String) {
         // Evitar duplicaciones
         if (skillDao.getAll(email).isNotEmpty()) return
@@ -263,11 +253,32 @@ class SkillConnectRepository(private val db: SkillConnectDatabase) {
 
     suspend fun getUserByEmail(email: String): UserEntity? = userDao.getUserByEmail(email)
 
-    suspend fun getLastRegisteredUser(): UserEntity? = userDao.getLastRegisteredUser()
+    fun saveLastLoggedInEmail(email: String) {
+        prefs.edit().putString("last_logged_in_email", email).apply()
+    }
+
+    fun clearLastLoggedInEmail() {
+        prefs.edit().remove("last_logged_in_email").apply()
+    }
+
+
+    suspend fun getLastRegisteredUser(): UserEntity? {
+        val lastEmail = prefs.getString("last_logged_in_email", null)
+        if (lastEmail != null) {
+            val user = userDao.getUserByEmail(lastEmail)
+            if (user != null) return user
+        }
+        return userDao.getLastRegisteredUser()
+    }
 
     suspend fun registerUser(user: UserEntity) {
         userDao.insert(user)
     }
+
+    suspend fun updateUser(user: UserEntity) {
+        userDao.insert(user)
+    }
+
 
     suspend fun getCategories(): List<Category> = categoryDao.getAll().map { it.toDomain() }
 

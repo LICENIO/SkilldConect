@@ -38,7 +38,7 @@ class MainActivity : FragmentActivity() {
         requestWindowFeature(Window.FEATURE_NO_TITLE)
         
         val database = SkillConnectDatabase.getDatabase(applicationContext)
-        val repository = SkillConnectRepository(database)
+        val repository = SkillConnectRepository(database, applicationContext)
         viewModel = SkillConnectViewModel(repository)
         viewModel.loadData()
 
@@ -108,7 +108,14 @@ fun AppContent(viewModel: SkillConnectViewModel) {
                 .padding(innerPadding)
         ) {
             when (currentScreen) {
-                "splash" -> SplashScreen(onFinished = { navigateTo("welcome") })
+                "splash" -> SplashScreen(onFinished = { 
+                    if (viewModel.savedUser != null) {
+                        navigateTo("login")
+                    } else {
+                        navigateTo("welcome")
+                    }
+                })
+
                 "welcome" -> WelcomeScreen(
                     onLogin = { navigateTo("login") },
                     onRegister = { navigateTo("register") }

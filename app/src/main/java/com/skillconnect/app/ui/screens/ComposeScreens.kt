@@ -7,6 +7,9 @@ import androidx.biometric.BiometricPrompt
 import androidx.compose.animation.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.Image
+import androidx.compose.ui.res.painterResource
+import com.skillconnect.app.R
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -53,7 +56,14 @@ fun SplashScreen(onFinished: () -> Unit) {
             verticalArrangement = Arrangement.Center,
             modifier = Modifier.padding(28.dp)
         ) {
-            NeumorphicLogo("SC", size = 110.dp, backgroundColor = NeumorphicColors.primary, elevation = 8.dp)
+            Image(
+                painter = painterResource(id = R.drawable.logo),
+                contentDescription = "App Logo",
+                modifier = Modifier
+                    .size(110.dp)
+                    .neumorphic(cornerRadius = 55.dp, offset = 4.dp, shadowRadius = 8.dp)
+                    .clip(CircleShape)
+            )
             Spacer(modifier = Modifier.height(24.dp))
             Text(
                 text = "SkillConnect",
@@ -92,7 +102,14 @@ fun WelcomeScreen(onLogin: () -> Unit, onRegister: () -> Unit) {
     ) {
         Spacer(modifier = Modifier.height(20.dp))
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            NeumorphicLogo("SC", size = 88.dp, backgroundColor = NeumorphicColors.primary)
+            Image(
+                painter = painterResource(id = R.drawable.logo),
+                contentDescription = "App Logo",
+                modifier = Modifier
+                    .size(88.dp)
+                    .neumorphic(cornerRadius = 44.dp, offset = 2.dp, shadowRadius = 4.dp)
+                    .clip(CircleShape)
+            )
             Spacer(modifier = Modifier.height(24.dp))
             Text(
                 text = "Todo el mundo tiene algo que enseñar y todo el mundo tiene algo que aprender",
@@ -138,7 +155,6 @@ fun WelcomeScreen(onLogin: () -> Unit, onRegister: () -> Unit) {
         Column(modifier = Modifier.fillMaxWidth()) {
             NeumorphicButton(
                 onClick = onLogin,
-                gradientBrush = ButtonGradients.SunsetGold,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Iniciar sesión", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
@@ -146,7 +162,6 @@ fun WelcomeScreen(onLogin: () -> Unit, onRegister: () -> Unit) {
             Spacer(modifier = Modifier.height(16.dp))
             NeumorphicButton(
                 onClick = onRegister,
-                gradientBrush = ButtonGradients.VioletCyan,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Crear cuenta", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
@@ -163,11 +178,25 @@ fun LoginScreen(viewModel: SkillConnectViewModel, onSuccess: () -> Unit, onRegis
     val activity = context as? FragmentActivity
     val scope = rememberCoroutineScope()
 
-    var email by remember { mutableStateOf("valeria.rios@ejemplo.com") }
-    var password by remember { mutableStateOf("12345678") }
+    var email by remember { mutableStateOf(viewModel.savedUser?.email ?: "") }
+    var isChangingAccount by remember { mutableStateOf(viewModel.savedUser == null) }
+
+    var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
     var rememberMe by remember { mutableStateOf(true) }
     var isLoading by remember { mutableStateOf(false) }
+    var showBiometricRegisterDialog by remember { mutableStateOf(false) }
+
+    var showForgotPasswordDialog by remember { mutableStateOf(false) }
+    var forgotEmail by remember { mutableStateOf("") }
+    var forgotNewPassword by remember { mutableStateOf("") }
+    var inputOtp by remember { mutableStateOf("") }
+    var generatedOtp by remember { mutableStateOf("") }
+    var forgotStep by remember { mutableStateOf(1) } // 1: Email, 2: OTP, 3: New Password
+
+    val shakeOffset = remember { androidx.compose.animation.core.Animatable(0f) }
+    var isPasswordError by remember { mutableStateOf(false) }
+
 
     fun triggerBiometricAuth() {
         if (activity == null) {
@@ -193,10 +222,11 @@ fun LoginScreen(viewModel: SkillConnectViewModel, onSuccess: () -> Unit, onRegis
                     scope.launch {
                         val authSuccess = viewModel.loginWithBiometrics()
                         if (authSuccess) {
-                            Toast.makeText(context, "¡Bienvenida de nuevo!", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, "¡Hola de nuevo!", Toast.LENGTH_SHORT).show()
                             onSuccess()
+
                         } else {
-                            Toast.makeText(context, "Registra una cuenta primero", Toast.LENGTH_SHORT).show()
+                            showBiometricRegisterDialog = true
                         }
                     }
                 }
@@ -226,6 +256,12 @@ fun LoginScreen(viewModel: SkillConnectViewModel, onSuccess: () -> Unit, onRegis
         }
     }
 
+    LaunchedEffect(viewModel.savedUser) {
+        if (viewModel.savedUser != null) {
+            triggerBiometricAuth()
+        }
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -243,18 +279,19 @@ fun LoginScreen(viewModel: SkillConnectViewModel, onSuccess: () -> Unit, onRegis
             ) {
                 Spacer(modifier = Modifier.height(8.dp))
                 
-                // Logo Animado o Destacado
-                NeumorphicLogo(
-                    initials = "SC", 
-                    size = 90.dp, 
-                    backgroundColor = NeumorphicColors.primary,
-                    elevation = 10.dp
+                Image(
+                    painter = painterResource(id = R.drawable.logo),
+                    contentDescription = "App Logo",
+                    modifier = Modifier
+                        .size(90.dp)
+                        .neumorphic(cornerRadius = 45.dp, offset = 5.dp, shadowRadius = 10.dp)
+                        .clip(CircleShape)
                 )
                 
                 Spacer(modifier = Modifier.height(24.dp))
                 
                 Text(
-                    text = "Bienvenida de nuevo",
+                    text = viewModel.savedUser?.let { "Hola, ${it.name}" } ?: "Bienvenido",
                     fontSize = 26.sp,
                     fontWeight = FontWeight.ExtraBold,
                     color = NeumorphicColors.text,
@@ -264,25 +301,44 @@ fun LoginScreen(viewModel: SkillConnectViewModel, onSuccess: () -> Unit, onRegis
                     text = "Aprende, enseña y conecta con expertos.",
                     fontSize = 15.sp,
                     color = NeumorphicColors.muted,
-                    modifier = Modifier.padding(top = 4.dp, bottom = 32.dp),
+                    modifier = Modifier.padding(top = 4.dp, bottom = 16.dp),
                     textAlign = TextAlign.Center
                 )
 
-                // Campo: Correo
-                Column(modifier = Modifier.fillMaxWidth()) {
-                    Text("Correo electrónico", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = NeumorphicColors.text)
-                    Spacer(modifier = Modifier.height(8.dp))
-                    NeumorphicTextField(
-                        value = email,
-                        onValueChange = { email = it },
-                        placeholder = "ejemplo@correo.com",
-                        leadingIcon = {
-                            Icon(Icons.Default.Email, contentDescription = null, tint = NeumorphicColors.primary, modifier = Modifier.size(20.dp))
-                        }
+                if (!isChangingAccount && viewModel.savedUser != null) {
+                    Text(
+                        text = "Cambiar de cuenta",
+                        color = NeumorphicColors.primary,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 14.sp,
+                        modifier = Modifier
+                            .clickable { 
+                                isChangingAccount = true
+                                email = "" 
+                            }
+                            .padding(bottom = 24.dp)
                     )
+                } else {
+                    Spacer(modifier = Modifier.height(16.dp))
                 }
 
-                Spacer(modifier = Modifier.height(20.dp))
+                // Campo: Correo
+                if (isChangingAccount) {
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        Text("Correo electrónico", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = NeumorphicColors.text)
+                        Spacer(modifier = Modifier.height(8.dp))
+                        NeumorphicTextField(
+                            value = email,
+                            onValueChange = { email = it },
+                            placeholder = "ejemplo@correo.com",
+                            leadingIcon = {
+                                Icon(Icons.Default.Email, contentDescription = null, tint = NeumorphicColors.primary, modifier = Modifier.size(20.dp))
+                            }
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(20.dp))
+                }
 
                 // Campo: Contraseña
                 Column(modifier = Modifier.fillMaxWidth()) {
@@ -290,11 +346,15 @@ fun LoginScreen(viewModel: SkillConnectViewModel, onSuccess: () -> Unit, onRegis
                     Spacer(modifier = Modifier.height(8.dp))
                     NeumorphicTextField(
                         value = password,
-                        onValueChange = { password = it },
+                        onValueChange = { 
+                            password = it 
+                            if (isPasswordError) isPasswordError = false
+                        },
                         placeholder = "Ingresa tu clave",
                         visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                        modifier = Modifier.offset(x = shakeOffset.value.dp),
                         leadingIcon = {
-                            Icon(Icons.Default.Lock, contentDescription = null, tint = NeumorphicColors.primary, modifier = Modifier.size(20.dp))
+                            Icon(Icons.Default.Lock, contentDescription = null, tint = if (isPasswordError) Color.Red else NeumorphicColors.primary, modifier = Modifier.size(20.dp))
                         },
                         trailingIcon = {
                             IconButton(onClick = { passwordVisible = !passwordVisible }) {
@@ -331,8 +391,13 @@ fun LoginScreen(viewModel: SkillConnectViewModel, onSuccess: () -> Unit, onRegis
                         fontSize = 13.sp,
                         color = NeumorphicColors.primary,
                         fontWeight = FontWeight.Bold,
-                        modifier = Modifier.clickable { /* logic */ }
+                        modifier = Modifier.clickable { 
+                            forgotEmail = email
+                            forgotStep = 1
+                            showForgotPasswordDialog = true 
+                        }
                     )
+
                 }
 
                 Spacer(modifier = Modifier.height(32.dp))
@@ -347,13 +412,27 @@ fun LoginScreen(viewModel: SkillConnectViewModel, onSuccess: () -> Unit, onRegis
                             if (email.isNotBlank() && password.length >= 4) {
                                 isLoading = true
                                 scope.launch {
-                                    val success = viewModel.loginWithEmail(email, password)
+                                    val result = viewModel.loginWithEmail(email, password, rememberMe)
                                     isLoading = false
-                                    if (success) {
-                                        Toast.makeText(context, "¡Hola de nuevo!", Toast.LENGTH_SHORT).show()
-                                        onSuccess()
-                                    } else {
-                                        Toast.makeText(context, "Credenciales incorrectas", Toast.LENGTH_SHORT).show()
+                                    when (result) {
+                                        SkillConnectViewModel.LoginResult.Success -> {
+                                            Toast.makeText(context, "¡Hola de nuevo!", Toast.LENGTH_SHORT).show()
+                                            onSuccess()
+                                        }
+                                        SkillConnectViewModel.LoginResult.UserNotFound -> {
+                                            Toast.makeText(context, "No existe ninguna cuenta con este correo.", Toast.LENGTH_LONG).show()
+                                        }
+                                        SkillConnectViewModel.LoginResult.IncorrectPassword -> {
+                                            isPasswordError = true
+                                            Toast.makeText(context, "La contraseña es incorrecta. Inténtalo de nuevo.", Toast.LENGTH_LONG).show()
+                                            // Efecto Shake
+                                            launch {
+                                                shakeOffset.animateTo(15f, animationSpec = androidx.compose.animation.core.tween(50))
+                                                shakeOffset.animateTo(-15f, animationSpec = androidx.compose.animation.core.tween(50))
+                                                shakeOffset.animateTo(15f, animationSpec = androidx.compose.animation.core.tween(50))
+                                                shakeOffset.animateTo(0f, animationSpec = androidx.compose.animation.core.tween(50))
+                                            }
+                                        }
                                     }
                                 }
                             } else {
@@ -361,7 +440,6 @@ fun LoginScreen(viewModel: SkillConnectViewModel, onSuccess: () -> Unit, onRegis
                             }
                         },
                         modifier = Modifier.weight(1f),
-                        gradientBrush = if (isLoading) null else ButtonGradients.SunsetGold,
                         backgroundColor = if (isLoading) Color.LightGray else NeumorphicColors.primary
                     ) {
                         if (isLoading) {
@@ -431,7 +509,188 @@ fun LoginScreen(viewModel: SkillConnectViewModel, onSuccess: () -> Unit, onRegis
                 Spacer(modifier = Modifier.height(20.dp))
             }
         }
+        
+        if (showForgotPasswordDialog) {
+            AlertDialog(
+                onDismissRequest = { showForgotPasswordDialog = false },
+                title = { 
+                    val titleText = when (forgotStep) {
+                        1 -> "Recuperar Contraseña"
+                        2 -> "Código de Seguridad"
+                        else -> "Nueva Contraseña"
+                    }
+                    Text(titleText, fontWeight = FontWeight.Bold, color = NeumorphicColors.text) 
+                },
+                text = {
+                    Column {
+                        when (forgotStep) {
+                            1 -> {
+                                Text("Ingresa tu correo para buscar tu cuenta.", fontSize = 14.sp, color = NeumorphicColors.muted)
+                                Spacer(modifier = Modifier.height(16.dp))
+                                NeumorphicTextField(
+                                    value = forgotEmail,
+                                    onValueChange = { forgotEmail = it },
+                                    placeholder = "ejemplo@correo.com"
+                                )
+                            }
+                            2 -> {
+                                Text("Hemos enviado un código de 6 dígitos a tu correo. Ingrésalo aquí.", fontSize = 14.sp, color = NeumorphicColors.muted)
+                                Spacer(modifier = Modifier.height(16.dp))
+                                NeumorphicTextField(
+                                    value = inputOtp,
+                                    onValueChange = { if (it.length <= 6) inputOtp = it },
+                                    placeholder = "123456"
+                                )
+                            }
+                            3 -> {
+                                Text("Crea una nueva contraseña para tu cuenta.", fontSize = 14.sp, color = NeumorphicColors.muted)
+                                Spacer(modifier = Modifier.height(16.dp))
+                                NeumorphicTextField(
+                                    value = forgotNewPassword,
+                                    onValueChange = { forgotNewPassword = it },
+                                    placeholder = "Nueva Contraseña",
+                                    visualTransformation = PasswordVisualTransformation()
+                                )
+                            }
+                        }
+                    }
+                },
+                confirmButton = {
+                    Button(onClick = {
+                        scope.launch {
+                            when (forgotStep) {
+                                1 -> {
+                                    if (forgotEmail.isNotBlank()) {
+                                        val result = viewModel.loginWithEmail(forgotEmail, "dummy", false)
+                                        if (result == SkillConnectViewModel.LoginResult.UserNotFound) {
+                                            Toast.makeText(context, "Correo no encontrado", Toast.LENGTH_SHORT).show()
+                                        } else {
+                                            // Generar OTP
+                                            generatedOtp = (100000..999999).random().toString()
+                                            forgotStep = 2 // Pasar a OTP
+                                            // Simular envío de correo
+                                            Toast.makeText(context, "📩 SIMULADOR DE CORREO:\nTu código es $generatedOtp", Toast.LENGTH_LONG).show()
+                                        }
+                                    }
+                                }
+                                2 -> {
+                                    if (inputOtp == generatedOtp) {
+                                        forgotStep = 3 // Pasar a Nueva Contraseña
+                                        Toast.makeText(context, "Código verificado", Toast.LENGTH_SHORT).show()
+                                    } else {
+                                        Toast.makeText(context, "Código incorrecto", Toast.LENGTH_SHORT).show()
+                                    }
+                                }
+                                3 -> {
+                                    if (forgotNewPassword.length >= 4) {
+                                        val success = viewModel.resetPassword(forgotEmail, forgotNewPassword)
+                                        if (success) {
+                                            Toast.makeText(context, "Contraseña actualizada. Inicia sesión.", Toast.LENGTH_LONG).show()
+                                            showForgotPasswordDialog = false
+                                        } else {
+                                            Toast.makeText(context, "Error al actualizar", Toast.LENGTH_SHORT).show()
+                                        }
+                                    } else {
+                                        Toast.makeText(context, "Mínimo 4 caracteres", Toast.LENGTH_SHORT).show()
+                                    }
+                                }
+                            }
+                        }
+                    }) {
+                        Text(if (forgotStep == 3) "Guardar" else "Continuar")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showForgotPasswordDialog = false }) { Text("Cancelar") }
+                }
+            )
+        }
+        
+        if (showBiometricRegisterDialog) {
+            var newName by remember { mutableStateOf("") }
+            var newPassword by remember { mutableStateOf("") }
+            var newPasswordVisible by remember { mutableStateOf(false) }
+            
+            // Lógica de fuerza de contraseña
+            val strength = when {
+                newPassword.length < 6 -> "Débil"
+                newPassword.length >= 6 && newPassword.any { it.isDigit() } && newPassword.any { it.isUpperCase() } -> "Fuerte"
+                else -> "Media"
+            }
+            val strengthColor = when (strength) {
+                "Débil" -> Color.Red
+                "Fuerte" -> Color(0xFF4CAF50)
+                else -> Color(0xFFFFC107)
+            }
+            
+            AlertDialog(
+                onDismissRequest = { showBiometricRegisterDialog = false },
+                title = { Text("Completar Registro", fontWeight = FontWeight.Bold, color = NeumorphicColors.text) },
+                text = {
+                    Column {
+                        Text("Ingresa tus datos para vincular tu huella.", fontSize = 14.sp, color = NeumorphicColors.muted)
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text("Nombre", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = NeumorphicColors.text)
+                        Spacer(modifier = Modifier.height(8.dp))
+                        NeumorphicTextField(
+                            value = newName,
+                            onValueChange = { newName = it },
+                            placeholder = "Tu nombre"
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text("Contraseña", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = NeumorphicColors.text)
+                        Spacer(modifier = Modifier.height(8.dp))
+                        NeumorphicTextField(
+                            value = newPassword,
+                            onValueChange = { newPassword = it },
+                            placeholder = "Contraseña",
+                            visualTransformation = if (newPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                            trailingIcon = {
+                                IconButton(onClick = { newPasswordVisible = !newPasswordVisible }) {
+                                    Icon(
+                                        imageVector = if (newPasswordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                                        contentDescription = null,
+                                        tint = NeumorphicColors.muted,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+                            }
+                        )
+                        if (newPassword.isNotEmpty()) {
+                            Spacer(modifier = Modifier.height(6.dp))
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                                Text("Seguridad: $strength", fontSize = 12.sp, color = strengthColor, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
+                },
+                confirmButton = {
+                    NeumorphicButton(onClick = {
+                        if (newName.isNotBlank() && newPassword.length >= 4) {
+                            scope.launch {
+                                viewModel.registerAfterBiometric(newName, newPassword)
+                                showBiometricRegisterDialog = false
+                                Toast.makeText(context, "¡Cuenta creada con éxito!", Toast.LENGTH_SHORT).show()
+                                onSuccess()
+                            }
+                        } else {
+                            Toast.makeText(context, "Completa los campos (Contraseña min. 4 chars)", Toast.LENGTH_SHORT).show()
+                        }
+                    }) {
+                        Text("Guardar", color = Color.White, fontWeight = FontWeight.Bold)
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showBiometricRegisterDialog = false }) {
+                        Text("Cancelar", color = NeumorphicColors.primary, fontWeight = FontWeight.Bold)
+                    }
+                },
+                containerColor = NeumorphicColors.bg,
+                shape = RoundedCornerShape(16.dp)
+            )
+        }
     }
+
 }
 
 // --- PANTALLA: REGISTRO (REGISTER) ---
@@ -627,7 +886,7 @@ fun HomeScreen(viewModel: SkillConnectViewModel, onNavigate: (String) -> Unit) {
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("¡Hola, ${user?.name ?: "Valeria"}! 👋", fontSize = 14.sp, color = Color.White.copy(alpha = 0.85f))
+                        Text("¡Hola, ${user?.name ?: "Usuario"}! 👋", fontSize = 14.sp, color = Color.White.copy(alpha = 0.85f))
                         Text("¿Qué quieres aprender hoy?", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color.White)
                     }
                     Spacer(modifier = Modifier.width(10.dp))
@@ -1024,7 +1283,6 @@ fun MentorScreen(
         Spacer(modifier = Modifier.height(12.dp))
         NeumorphicButton(
             onClick = onExchange,
-            gradientBrush = ButtonGradients.VioletCyan,
             modifier = Modifier.fillMaxWidth()
         ) {
             Text("Solicitar intercambio (Trueque)", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
@@ -1385,6 +1643,9 @@ fun ProfileScreen(viewModel: SkillConnectViewModel, onNavigate: (String) -> Unit
             .padding(top = 18.dp)
             .verticalScroll(rememberScrollState())
     ) {
+        var showEditDialog by remember { mutableStateOf(false) }
+        var editName by remember { mutableStateOf(user?.name ?: "") }
+        
         NeumorphicCard(modifier = Modifier.fillMaxWidth()) {
             Column(
                 modifier = Modifier.fillMaxWidth(),
@@ -1392,17 +1653,47 @@ fun ProfileScreen(viewModel: SkillConnectViewModel, onNavigate: (String) -> Unit
             ) {
                 NeumorphicLogo(user?.initials ?: "VR", size = 88.dp)
                 Spacer(modifier = Modifier.height(12.dp))
-                Text(user?.name ?: "Valeria Ríos", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = NeumorphicColors.text)
+                Text(user?.name ?: "Usuario", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = NeumorphicColors.text)
                 Text(
                     text = if (user != null) "Rol: ${user.role}" else "Diseñadora UX - Aprendiz de guitarra",
                     fontSize = 14.sp,
                     color = NeumorphicColors.muted
                 )
                 Spacer(modifier = Modifier.height(16.dp))
-                NeumorphicButton(onClick = { /* Edit */ }) {
+                NeumorphicButton(onClick = { 
+                    editName = user?.name ?: ""
+                    showEditDialog = true 
+                }) {
                     Text("Editar perfil", color = Color.White, fontWeight = FontWeight.Bold)
                 }
             }
+        }
+
+        if (showEditDialog) {
+            AlertDialog(
+                onDismissRequest = { showEditDialog = false },
+                title = { Text("Editar Perfil") },
+                text = {
+                    OutlinedTextField(
+                        value = editName,
+                        onValueChange = { editName = it },
+                        label = { Text("Nuevo nombre") }
+                    )
+                },
+                confirmButton = {
+                    Button(onClick = {
+                        if (editName.isNotBlank()) {
+                            viewModel.updateUserName(editName)
+                            showEditDialog = false
+                        }
+                    }) {
+                        Text("Guardar")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showEditDialog = false }) { Text("Cancelar") }
+                }
+            )
         }
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -1454,7 +1745,7 @@ fun ProfileScreen(viewModel: SkillConnectViewModel, onNavigate: (String) -> Unit
         // Botón neumórfico para Cerrar Sesión con gradiente Rojo Coral y texto Blanco
         NeumorphicButton(
             onClick = { viewModel.logout() },
-            gradientBrush = ButtonGradients.CoralRose,
+            backgroundColor = Color(0xFFEF4444),
             modifier = Modifier.fillMaxWidth()
         ) {
             Icon(imageVector = Icons.Default.ExitToApp, contentDescription = "Cerrar sesión", tint = Color.White)

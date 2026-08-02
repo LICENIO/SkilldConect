@@ -78,7 +78,7 @@ fun NeumorphicButton(
     modifier: Modifier = Modifier,
     cornerRadius: Dp = 25.dp, // Forma de píldora (Pill shape) idéntica a la imagen
     backgroundColor: Color = NeumorphicColors.primary,
-    gradientBrush: androidx.compose.ui.graphics.Brush? = ButtonGradients.SunsetGold,
+    gradientBrush: androidx.compose.ui.graphics.Brush? = null,
     content: @Composable RowScope.() -> Unit
 ) {
     val interactionSource = remember { MutableInteractionSource() }
