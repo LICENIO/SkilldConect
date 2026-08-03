@@ -9,11 +9,67 @@ import com.skillconnect.app.data.model.*
 import com.skillconnect.app.data.repository.SkillConnectRepository
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.collect
+import com.skillconnect.app.data.repository.FirebaseUserRepository
+import com.skillconnect.app.data.repository.FirebaseChatRepository
+import com.skillconnect.app.data.repository.UserProfile
+import com.skillconnect.app.data.repository.CloudMessage
+import com.skillconnect.app.data.repository.AuthFailure
+import com.skillconnect.app.data.repository.FirebaseAuthRepository
 
+import com.skillconnect.app.data.repository.FirebaseCalendarRepository
+import com.skillconnect.app.data.repository.FirebaseExchangeRepository
+import com.skillconnect.app.data.repository.FirebaseReviewRepository
+import com.skillconnect.app.data.repository.CloudReview
+import com.skillconnect.app.data.repository.CloudCourse
+import com.skillconnect.app.data.repository.CloudCalendarEvent
+import com.skillconnect.app.data.repository.CloudExchange
 class SkillConnectViewModel(
     private val repository: SkillConnectRepository
 ) : ViewModel() {
-    var selectedMentorId by mutableStateOf(1)
+    private val authRepository = FirebaseAuthRepository()
+    private val firebaseUserRepository = FirebaseUserRepository()
+    private val firebaseChatRepository = FirebaseChatRepository()
+    private val firebaseCalendarRepository = FirebaseCalendarRepository()
+    private val firebaseExchangeRepository = FirebaseExchangeRepository()
+    private val firebaseReviewRepository = FirebaseReviewRepository()
+
+    var cloudUsers by mutableStateOf<List<UserProfile>>(emptyList())
+        private set
+    var currentCloudUser by mutableStateOf<UserProfile?>(null)
+        private set
+
+    var currentChatMessages by mutableStateOf<List<CloudMessage>>(emptyList())
+        private set
+
+    
+    var cloudExchanges by mutableStateOf<List<CloudExchange>>(emptyList())
+        private set
+    var cloudCalendar by mutableStateOf<Map<String, List<CloudCalendarEvent>>>(emptyMap())
+        private set
+
+    init {
+        viewModelScope.launch {
+            firebaseUserRepository.getRealtimeUsers().collect { users ->
+                cloudUsers = users
+                activeUserEmail?.let { email -> 
+                    currentCloudUser = users.find { it.email == email } 
+                }
+            }
+        }
+        viewModelScope.launch {
+            firebaseExchangeRepository.getExchanges().collect { exchangesList ->
+                cloudExchanges = exchangesList
+            }
+        }
+    }
+
+
+    
+    var selectedMentorReviews by mutableStateOf<List<CloudReview>>(emptyList())
+        private set
+var selectedCloudUserEmail by mutableStateOf("")
+    var selectedMentorId by mutableStateOf(1) // For legacy UI components
     var activeChatId by mutableStateOf(1)
 
     // Estado del usuario activo
@@ -50,8 +106,11 @@ class SkillConnectViewModel(
         viewModelScope.launch {
             repository.initializeIfNeeded()
             // Por defecto, intentar iniciar con el último usuario registrado
+            val firebaseEmail = authRepository.currentUser?.email?.trim()?.lowercase()
             val lastUser = repository.getLastRegisteredUser()
-            if (lastUser != null) {
+            if (firebaseEmail != null) {
+                activateAccount(firebaseEmail, rememberMe = true, fallbackName = authRepository.currentUser?.displayName)
+            } else if (lastUser != null) {
                 savedUser = lastUser
                 // NOTA: Ya no logueamos automáticamente (activeUserEmail = lastUser.email)
                 // para obligar al usuario a usar la huella (estilo Yape).
@@ -66,7 +125,21 @@ class SkillConnectViewModel(
 
         val email = activeUserEmail
         if (email != null) {
-            chats = repository.getChats(email)
+                        viewModelScope.launch {
+                firebaseCalendarRepository.getEvents(email, "Clases").collect { ev ->
+                    val newMap = cloudCalendar.toMutableMap()
+                    newMap["Clases"] = ev
+                    cloudCalendar = newMap
+                }
+            }
+            viewModelScope.launch {
+                firebaseCalendarRepository.getEvents(email, "Intercambios").collect { ev ->
+                    val newMap = cloudCalendar.toMutableMap()
+                    newMap["Intercambios"] = ev
+                    cloudCalendar = newMap
+                }
+            }
+chats = repository.getChats(email)
             calendar = repository.getCalendar(email)
             skills = repository.getSkills(email)
             learning = repository.getLearning(email)
@@ -88,52 +161,94 @@ class SkillConnectViewModel(
         object Success : LoginResult()
         object UserNotFound : LoginResult()
         object IncorrectPassword : LoginResult()
+        object NetworkError : LoginResult()
+    }
+
+    sealed class RegisterResult {
+        object Success : RegisterResult()
+        object InvalidData : RegisterResult()
+        object EmailAlreadyInUse : RegisterResult()
+        object InvalidEmail : RegisterResult()
+        object NetworkError : RegisterResult()
+    }
+
+    private fun initialsFromName(name: String): String {
+        return name.split(" ")
+            .filter { it.isNotBlank() }
+            .take(2)
+            .map { it.first().uppercaseChar() }
+            .joinToString("")
+            .ifEmpty { "SC" }
+    }
+
+    private suspend fun activateAccount(
+        cleanEmail: String,
+        rememberMe: Boolean,
+        fallbackName: String? = null
+    ): UserEntity {
+        val cloudProfile = firebaseUserRepository.getUserProfile(cleanEmail)
+        val displayName = cloudProfile?.name ?: fallbackName?.takeIf { it.isNotBlank() } ?: "Usuario SkillConnect"
+        val initials = cloudProfile?.initials?.takeIf { it.isNotBlank() } ?: initialsFromName(displayName)
+        val role = cloudProfile?.role ?: "Ambos"
+
+        var user = repository.getUserByEmail(cleanEmail)
+        if (user == null) {
+            user = UserEntity(
+                email = cleanEmail,
+                name = displayName,
+                password = "firebase_managed",
+                role = role,
+                initials = initials
+            )
+            repository.registerUser(user)
+            repository.initializeUserSeeds(cleanEmail)
+        } else if (user.name != displayName || user.initials != initials || user.role != role) {
+            user = user.copy(name = displayName, initials = initials, role = role)
+            repository.updateUser(user)
+        }
+
+        if (rememberMe) {
+            repository.saveLastLoggedInEmail(user.email)
+        } else {
+            repository.clearLastLoggedInEmail()
+        }
+
+        activeUserEmail = user.email
+        currentCloudUser = cloudProfile
+        currentUser = user
+        savedUser = if (rememberMe) user else null
+        refreshAll()
+        return user
     }
 
     suspend fun loginWithEmail(email: String, password: String, rememberMe: Boolean = true): LoginResult {
         val cleanEmail = email.trim().lowercase()
-        val userByEmail = repository.getUserByEmail(cleanEmail)
+        val result = authRepository.login(cleanEmail, password)
         
-        if (userByEmail == null) {
-            return LoginResult.UserNotFound
-        }
-        
-        val user = repository.getUser(cleanEmail, password)
-        return if (user != null) {
-            if (rememberMe) {
-                repository.saveLastLoggedInEmail(user.email)
-            } else {
-                repository.clearLastLoggedInEmail()
-            }
-            activeUserEmail = user.email
-            currentUser = user
-            savedUser = user
-            refreshAll()
+        return if (result.isSuccess) {
+            activateAccount(cleanEmail, rememberMe, fallbackName = result.getOrNull()?.displayName)
             LoginResult.Success
         } else {
-            LoginResult.IncorrectPassword
+            when (authRepository.loginFailure(result.exceptionOrNull())) {
+                AuthFailure.UserNotFound -> LoginResult.UserNotFound
+                AuthFailure.InvalidCredentials -> LoginResult.IncorrectPassword
+                else -> LoginResult.NetworkError
+            }
         }
     }
 
-    suspend fun resetPassword(email: String, newPass: String): Boolean {
+    suspend fun sendPasswordReset(email: String): Boolean {
         val cleanEmail = email.trim().lowercase()
-        val user = repository.getUserByEmail(cleanEmail)
-        return if (user != null) {
-            repository.updateUser(user.copy(password = newPass))
-            true
-        } else {
-            false
-        }
+        if (cleanEmail.isEmpty()) return false
+        return authRepository.sendPasswordReset(cleanEmail).isSuccess
     }
 
 
     suspend fun loginWithBiometrics(): Boolean {
         val lastUser = repository.getLastRegisteredUser()
-        return if (lastUser != null) {
-            activeUserEmail = lastUser.email
-            currentUser = lastUser
-            savedUser = lastUser
-            refreshAll()
+        val firebaseEmail = authRepository.currentUser?.email?.trim()?.lowercase()
+        return if (lastUser != null && firebaseEmail == lastUser.email) {
+            activateAccount(lastUser.email, rememberMe = true, fallbackName = lastUser.name)
             true
         } else {
             false
@@ -146,47 +261,62 @@ class SkillConnectViewModel(
         val name = "Usuario Rápido"
         val password = "biometric_quick_password"
         
-        return registerUser(name, email, password, "Ambos")
+        return registerUser(name, email, password, "Ambos") == RegisterResult.Success
     }
 
     suspend fun registerAfterBiometric(name: String, password: String): Boolean {
         val randomId = (10000..99999).random()
         val email = "huella$randomId@skillconnect.app"
-        return registerUser(name, email, password, "Ambos")
+        return registerUser(name, email, password, "Ambos") == RegisterResult.Success
     }
 
 
-    suspend fun registerUser(name: String, email: String, password: String, role: String): Boolean {
+    suspend fun registerUser(name: String, email: String, password: String, role: String): RegisterResult {
         val cleanEmail = email.trim().lowercase()
-        if (cleanEmail.isEmpty() || password.length < 4 || name.trim().isEmpty()) return false
+        if (cleanEmail.isEmpty() || password.length < 6 || name.trim().isEmpty()) return RegisterResult.InvalidData
 
         val existing = repository.getUserByEmail(cleanEmail)
-        if (existing != null) return false // Correo ya registrado
+        if (existing != null) return RegisterResult.EmailAlreadyInUse // Correo ya registrado localmente
 
-        val initials = name.split(" ")
-            .filter { it.isNotBlank() }
-            .take(2)
-            .map { it.first().uppercaseChar() }
-            .joinToString("")
-            .let { if (it.isEmpty()) "VR" else it }
+        val result = authRepository.register(cleanEmail, password)
+        if (result.isFailure) {
+            return when (authRepository.registerFailure(result.exceptionOrNull())) {
+                AuthFailure.EmailAlreadyInUse -> RegisterResult.EmailAlreadyInUse
+                AuthFailure.InvalidCredentials -> RegisterResult.InvalidEmail
+                else -> RegisterResult.NetworkError
+            }
+        }
+
+        val initials = initialsFromName(name)
 
         val newUser = UserEntity(
             email = cleanEmail,
             name = name.trim(),
-            password = password,
+            password = "firebase_managed",
             role = role,
             initials = initials
         )
+
+                val userProfile = UserProfile(
+            email = cleanEmail,
+            name = name.trim(),
+            initials = initials,
+            role = role
+        )
+        viewModelScope.launch {
+            firebaseUserRepository.saveUserProfile(userProfile)
+        }
 
         repository.registerUser(newUser)
         repository.initializeUserSeeds(cleanEmail) // Crear semillas específicas
         repository.saveLastLoggedInEmail(newUser.email)
         
         activeUserEmail = newUser.email
+        currentCloudUser = firebaseUserRepository.getUserProfile(cleanEmail)
         currentUser = newUser
         savedUser = newUser
         refreshAll()
-        return true
+        return RegisterResult.Success
     }
 
     fun updateUserName(newName: String) {
@@ -202,7 +332,31 @@ class SkillConnectViewModel(
         }
     }
 
+    
+    fun updateCloudProfile(profile: UserProfile) {
+        if (profile.email.isBlank()) return
+        viewModelScope.launch {
+            firebaseUserRepository.saveUserProfile(profile)
+            currentCloudUser = profile
+        }
+    }
+
+    fun listenToChat(chatId: String) {
+        viewModelScope.launch {
+            firebaseChatRepository.getMessages(chatId).collect { msgs ->
+                currentChatMessages = msgs
+            }
+        }
+    }
+
+    fun sendCloudMessage(chatId: String, text: String) {
+        activeUserEmail?.let {
+            firebaseChatRepository.sendMessage(chatId, it, text)
+        }
+    }
+
     fun logout() {
+        authRepository.logout()
         activeUserEmail = null
         currentUser = null
         viewModelScope.launch {
@@ -212,25 +366,32 @@ class SkillConnectViewModel(
 
     // --- ACCIONES DEL USUARIO CONECTADO ---
 
-    fun selectedMentor(): Mentor {
-        return mentors.firstOrNull { it.id == selectedMentorId }
-            ?: mentors.firstOrNull()
-            ?: Mentor(
+    fun selectedMentor(): com.skillconnect.app.data.model.Mentor {
+        val user = cloudUsers.find { it.email == selectedCloudUserEmail }
+        return if (user != null) {
+            com.skillconnect.app.data.model.Mentor(
                 id = 1,
-                name = "Carlos Medina",
-                initials = "CM",
-                specialty = "Guitarra y composición",
-                rating = 4.9,
-                reviews = 128,
-                price = 45,
-                mode = listOf("Virtual", "Presencial"),
-                type = "pagado",
-                experience = "7 años enseñando música",
-                description = "Músico profesional con formación en conservatorio.",
-                availability = listOf("Lun 5pm", "Mié 6pm"),
-                accentColor = "#7C5CFF"
+                name = user.name,
+                initials = user.initials.ifEmpty { "VR" },
+                specialty = if (user.teachSkills.isNotEmpty()) user.teachSkills.first() else "General",
+                rating = 5.0,
+                reviews = 0,
+                price = user.hourlyRate,
+                mode = listOf("Virtual"),
+                type = if (user.hourlyRate == 0) "intercambio" else "pagado",
+                experience = user.description,
+                description = user.description,
+                availability = listOf("Por coordinar"),
+                accentColor = "#4CAF50"
             )
+        } else {
+            com.skillconnect.app.data.model.Mentor(
+                id = 1, name = "Cargando...", initials = "", specialty = "", rating = 0.0, reviews = 0, price = 0, mode = emptyList(), type = "", experience = "", description = "", availability = emptyList(), accentColor = "#7C5CFF"
+            )
+        }
     }
+
+
 
     fun searchMentors(query: String, filter: String): List<Mentor> {
         val normalized = query.trim().lowercase()
@@ -266,61 +427,43 @@ class SkillConnectViewModel(
 
     fun bookClass(mentorId: Int, date: String, hour: String, mode: String) {
         val email = activeUserEmail ?: return
+        val userProfile = cloudUsers.find { it.email == selectedCloudUserEmail }
+        
         viewModelScope.launch {
-            val mentor = repository.getMentorById(mentorId)
-            val event = CalendarEvent(
-                title = "Clase con ${mentor.name}",
+            val event = CloudCalendarEvent(
+                title = "Clase con ${userProfile?.name ?: "Mentor"}",
                 time = "$date - $hour",
                 tag = mode,
-                initials = mentor.initials
+                initials = userProfile?.initials ?: "VR",
+                categoryTab = "Clases"
             )
-            repository.insertCalendarEvent(email, "Clases", event)
-
-            val notification = NotificationItem(
-                title = "Clase reservada",
-                description = "Tu clase de ${mentor.specialty} con ${mentor.name} ha sido agendada.",
-                time = "Hace un momento",
-                unread = true
-            )
-            repository.insertNotification(email, notification.title, notification.description, notification.time, notification.unread)
-            
-            refreshAll()
+            firebaseCalendarRepository.addEvent(email, event)
         }
     }
-
     fun requestExchange(mentorId: Int, teachSkill: String, learnSkill: String, message: String) {
         val email = activeUserEmail ?: return
+        val userProfile = cloudUsers.find { it.email == selectedCloudUserEmail }
+
         viewModelScope.launch {
-            val mentor = repository.getMentorById(mentorId)
-            
-            val event = CalendarEvent(
-                title = "$teachSkill por $learnSkill con ${mentor.name}",
+            val event = CloudCalendarEvent(
+                title = "$teachSkill por $learnSkill con ${userProfile?.name ?: "Usuario"}",
                 time = "Petición Pendiente",
                 tag = "Intercambio",
-                initials = mentor.initials
+                initials = userProfile?.initials ?: "VR",
+                categoryTab = "Intercambios"
             )
-            repository.insertCalendarEvent(email, "Intercambios", event)
+            firebaseCalendarRepository.addEvent(email, event)
 
-            val exchange = Exchange(
+            val exchange = CloudExchange(
                 title = "${currentUser?.name ?: "Usuario"} enseña $teachSkill",
                 subtitle = "Busca $learnSkill",
                 initials = currentUser?.initials ?: "VR"
             )
-            repository.insertExchange(exchange)
-
-            val notification = NotificationItem(
-                title = "Solicitud de intercambio",
-                description = "Enviada a ${mentor.name} para intercambiar $teachSkill por $learnSkill",
-                time = "Hace un momento",
-                unread = true
-            )
-            repository.insertNotification(email, notification.title, notification.description, notification.time, notification.unread)
-
-            refreshAll()
+            firebaseExchangeRepository.addExchange(exchange)
         }
     }
 
-    fun addSkill(name: String, level: String) {
+fun addSkill(name: String, level: String) {
         val email = activeUserEmail ?: return
         viewModelScope.launch {
             repository.insertSkill(email, UserSkill(name, level))
@@ -328,11 +471,57 @@ class SkillConnectViewModel(
         }
     }
 
-    fun clearChatUnread(id: Int) {
+    
+    fun saveProfile(updatedProfile: UserProfile) {
+        if (updatedProfile.email.isBlank()) return
+        viewModelScope.launch {
+            firebaseUserRepository.saveUserProfile(updatedProfile)
+            currentCloudUser = updatedProfile
+
+            val localUser = currentUser
+            if (localUser != null) {
+                val updatedLocalUser = localUser.copy(
+                    name = updatedProfile.name,
+                    role = updatedProfile.role,
+                    initials = updatedProfile.initials.ifBlank { initialsFromName(updatedProfile.name) }
+                )
+                repository.updateUser(updatedLocalUser)
+                currentUser = updatedLocalUser
+                savedUser = updatedLocalUser
+            }
+        }
+    }
+
+
+    fun fetchReviewsForMentor(email: String) {
+        viewModelScope.launch {
+            firebaseReviewRepository.getReviews(email).collect { revs ->
+                selectedMentorReviews = revs
+            }
+        }
+    }
+
+    fun addReview(targetEmail: String, rating: Double, comment: String) {
+        val myProfile = currentCloudUser ?: return
+        viewModelScope.launch {
+            val review = CloudReview(
+                reviewerEmail = myProfile.email,
+                reviewerName = myProfile.name,
+                rating = rating,
+                comment = comment
+            )
+            firebaseReviewRepository.addReview(targetEmail, review)
+        }
+    }
+
+fun clearChatUnread(id: Int) {
         val email = activeUserEmail ?: return
         viewModelScope.launch {
             repository.clearUnread(email, id)
             refreshAll()
         }
     }
+
+
+
 }

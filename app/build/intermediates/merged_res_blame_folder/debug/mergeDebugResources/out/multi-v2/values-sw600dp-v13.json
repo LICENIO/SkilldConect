@@ -1,10 +1,10 @@
 {
     "logs": [
         {
-            "outputFile": "com.skillconnect.app-mergeDebugResources-48:/values-sw600dp-v13/values-sw600dp-v13.xml",
+            "outputFile": "com.skillconnect.app-mergeDebugResources-56:/values-sw600dp-v13/values-sw600dp-v13.xml",
             "map": [
                 {
-                    "source": "C:\\Users\\willi\\.gradle\\caches\\transforms-4\\acbabef5642c8419ac1a8023ad8893b9\\transformed\\appcompat-1.2.0\\res\\values-sw600dp-v13\\values-sw600dp-v13.xml",
+                    "source": "C:\\Users\\willi\\.gradle\\caches\\8.13\\transforms\\830df9c82e99dcd387cfb7f02ea519b8\\transformed\\appcompat-1.2.0\\res\\values-sw600dp-v13\\values-sw600dp-v13.xml",
                     "from": {
                         "startLines": "2,3,4,5,6,7,8,9",
                         "startColumns": "4,4,4,4,4,4,4,4",

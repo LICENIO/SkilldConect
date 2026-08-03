@@ -137,8 +137,8 @@ fun AppContent(viewModel: SkillConnectViewModel) {
                     viewModel = viewModel,
                     filter = activeSearchFilter,
                     onFilterChange = { activeSearchFilter = it },
-                    onMentorSelect = { mentorId ->
-                        viewModel.selectedMentorId = mentorId
+                    onMentorSelect = { email ->
+                        viewModel.selectedCloudUserEmail = email
                         navigateTo("mentor")
                     },
                     onBack = { navigateBack() }
@@ -161,8 +161,8 @@ fun AppContent(viewModel: SkillConnectViewModel) {
                 )
                 "messages" -> MessagesScreen(
                     viewModel = viewModel,
-                    onChatSelect = { chatId ->
-                        viewModel.activeChatId = chatId
+                    onChatSelect = { email ->
+                        viewModel.selectedCloudUserEmail = email
                         navigateTo("chat")
                     }
                 )
@@ -182,14 +182,6 @@ fun AppContent(viewModel: SkillConnectViewModel) {
                 "statistics" -> StatisticsScreen(onBack = { navigateBack() })
                 "achievements" -> AchievementsScreen(viewModel, onBack = { navigateBack() })
                 "notifications" -> NotificationsScreen(viewModel, onBack = { navigateBack() })
-                "ai" -> AIScreen(
-                    viewModel = viewModel,
-                    onMentorFound = { mentorId ->
-                        viewModel.selectedMentorId = mentorId
-                        navigateTo("mentor")
-                    },
-                    onBack = { navigateBack() }
-                )
             }
         }
     }
@@ -213,7 +205,7 @@ fun NeumorphicBottomNav(
             .fillMaxWidth()
             .background(
                 androidx.compose.ui.graphics.Brush.horizontalGradient(
-                    listOf(Color(0xFF0099FF), Color(0xFF0066FF))
+                    listOf(Color(0xFF155E75), Color(0xFF0EA5A3))
                 )
             )
             .padding(vertical = 8.dp, horizontal = 12.dp),

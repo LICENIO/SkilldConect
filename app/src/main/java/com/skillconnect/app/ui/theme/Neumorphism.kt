@@ -12,25 +12,60 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
 // Paleta de colores Neumórfica con Azul Celeste Eléctrico vibrante como la imagen enviada
+
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+
 object NeumorphicColors {
-    val bg = Color(0xFFF0F4FA)
-    val text = Color(0xFF0F172A)
-    val muted = Color(0xFF64748B)
-    val primary = Color(0xFF0088FF) // Azul Celeste Eléctrico vibrante de la imagen
-    val headerBg = Color(0xFF0088FF) // Color del encabezado idéntico a la imagen
-    val bottomNavBg = Color(0xFF0077FF) // Azul celeste vibrante de la barra de la imagen
-    val accentYellow = Color(0xFFFDE68A) // Amarillo pastel suave y tenue (no intenso)
-    val accentCyan = Color(0xFF38BDF8) // Celeste brillante
-    val green = Color(0xFF10B981)
-    val orange = Color(0xFFF97316)
-    val purple = Color(0xFF8B5CF6)
-    val pink = Color(0xFFEC4899)
-    val teal = Color(0xFF00A896)
+    var bg by mutableStateOf(Color(0xFFF7FAFC))
+    var surface by mutableStateOf(Color(0xFFFFFFFF))
+    var surfaceAlt by mutableStateOf(Color(0xFFEAF4F4))
+    var text by mutableStateOf(Color(0xFF0F172A))
+    var muted by mutableStateOf(Color(0xFF64748B))
+    var primary by mutableStateOf(Color(0xFF0088FF))
+    var headerBg by mutableStateOf(Color(0xFF0088FF))
+    var bottomNavBg by mutableStateOf(Color(0xFF0077FF))
+    var accentYellow by mutableStateOf(Color(0xFFFDE68A))
+    var accentCyan by mutableStateOf(Color(0xFF38BDF8))
+    var green by mutableStateOf(Color(0xFF10B981))
+    var orange by mutableStateOf(Color(0xFFF97316))
+    var purple by mutableStateOf(Color(0xFF8B5CF6))
+    var pink by mutableStateOf(Color(0xFFEC4899))
+    var teal by mutableStateOf(Color(0xFF00A896))
     
-    // Sombras neumórficas
-    val lightShadow = Color(0xFFFFFFFF)
-    val darkShadow = Color(0xFFD5DBE5)
+    var lightShadow by mutableStateOf(Color(0xFFFFFFFF))
+    var darkShadow by mutableStateOf(Color(0xFFD5DBE5))
+
+    fun setDarkMode(isDark: Boolean) {
+        if (isDark) {
+            bg = Color(0xFF1E1E1E)
+            surface = Color(0xFF2A2A2A)
+            surfaceAlt = Color(0xFF333333)
+            text = Color(0xFFF7FAFC)
+            muted = Color(0xFFA0AABF)
+            primary = Color(0xFF38BDF8) // Brighter for dark mode
+            headerBg = Color(0xFF1E1E1E)
+            bottomNavBg = Color(0xFF1E1E1E)
+            
+            lightShadow = Color(0xFF2C2C2C) // Destello oscuro
+            darkShadow = Color(0xFF111111) // Sombra profunda
+        } else {
+            bg = Color(0xFFF7FAFC)
+            surface = Color(0xFFFFFFFF)
+            surfaceAlt = Color(0xFFEAF4F4)
+            text = Color(0xFF0F172A)
+            muted = Color(0xFF64748B)
+            primary = Color(0xFF0088FF)
+            headerBg = Color(0xFF0088FF)
+            bottomNavBg = Color(0xFF0077FF)
+            
+            lightShadow = Color(0xFFFFFFFF)
+            darkShadow = Color(0xFFD5DBE5)
+        }
+    }
 }
+
 
 // Modificador neumórfico personalizado para efectos Soft UI
 fun Modifier.neumorphic(

@@ -74,22 +74,5 @@ data class NotificationItem(
     val unread: Boolean
 )
 
-data class UserProfile(
-    val id: Int,
-    val name: String,
-    val email: String,
-    val password: String,
-    val goal: String,
-    val bio: String
-) {
-    val initials: String
-        get() = name
-            .split(" ")
-            .filter { it.isNotBlank() }
-            .take(2)
-            .joinToString("") { it.first().uppercase() }
-            .ifBlank { "SC" }
 
-    val firstName: String
-        get() = name.trim().split(" ").firstOrNull().orEmpty().ifBlank { "Usuario" }
-}
+

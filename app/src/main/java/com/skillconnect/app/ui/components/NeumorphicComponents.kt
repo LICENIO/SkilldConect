@@ -14,6 +14,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.ui.draw.scale
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -36,13 +39,19 @@ import com.skillconnect.app.ui.theme.neumorphic
 fun NeumorphicCard(
     modifier: Modifier = Modifier,
     cornerRadius: Dp = 16.dp,
-    backgroundColor: Color = Color.White,
+    backgroundColor: Color = NeumorphicColors.surface,
     isSunken: Boolean = false,
+    isPressed: Boolean = false,
     content: @Composable BoxScope.() -> Unit
 ) {
+    val scale by animateFloatAsState(
+        targetValue = if (isPressed) 0.97f else 1f,
+        animationSpec = tween(durationMillis = 150)
+    )
     Box(
         modifier = modifier
-            .neumorphic(cornerRadius = cornerRadius, isInnerShadow = isSunken, darkShadowColor = Color(0xFFD0D7E5))
+            .scale(scale)
+            .neumorphic(cornerRadius = cornerRadius, isInnerShadow = isSunken || isPressed, darkShadowColor = NeumorphicColors.darkShadow, lightShadowColor = NeumorphicColors.lightShadow)
             .background(backgroundColor, RoundedCornerShape(cornerRadius))
             .padding(16.dp),
         content = content
@@ -304,7 +313,7 @@ fun NeumorphicTopBar(
                 .fillMaxWidth()
                 .background(
                     androidx.compose.ui.graphics.Brush.horizontalGradient(
-                        listOf(Color(0xFF0099FF), Color(0xFF0066FF))
+                        listOf(Color(0xFF155E75), Color(0xFF0EA5A3))
                     )
                 )
                 .padding(horizontal = 16.dp, vertical = 14.dp)
@@ -358,4 +367,20 @@ fun NeumorphicTopBar(
             Spacer(modifier = Modifier.size(44.dp))
         }
     }
+}
+
+@Composable
+fun GlassCard(
+    modifier: Modifier = Modifier,
+    cornerRadius: Dp = 16.dp,
+    content: @Composable BoxScope.() -> Unit
+) {
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(cornerRadius))
+            .background(Color.White.copy(alpha = 0.15f))
+            // We use simple border and background to simulate glass since true blur requires RenderEffect (API 31+)
+            .padding(16.dp),
+        content = content
+    )
 }
