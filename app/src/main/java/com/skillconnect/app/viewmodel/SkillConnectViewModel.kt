@@ -24,6 +24,8 @@ import com.skillconnect.app.data.repository.CloudReview
 import com.skillconnect.app.data.repository.CloudCourse
 import com.skillconnect.app.data.repository.CloudCalendarEvent
 import com.skillconnect.app.data.repository.CloudExchange
+import com.skillconnect.app.data.repository.FirebaseRequestRepository
+import com.skillconnect.app.data.repository.CloudRequest
 class SkillConnectViewModel(
     private val repository: SkillConnectRepository
 ) : ViewModel() {
@@ -33,6 +35,10 @@ class SkillConnectViewModel(
     private val firebaseCalendarRepository = FirebaseCalendarRepository()
     private val firebaseExchangeRepository = FirebaseExchangeRepository()
     private val firebaseReviewRepository = FirebaseReviewRepository()
+    private val firebaseRequestRepository = FirebaseRequestRepository()
+
+    var cloudRequests by mutableStateOf<List<CloudRequest>>(emptyList())
+        private set
 
     var cloudUsers by mutableStateOf<List<UserProfile>>(emptyList())
         private set
@@ -105,15 +111,16 @@ var selectedCloudUserEmail by mutableStateOf("")
     fun loadData() {
         viewModelScope.launch {
             repository.initializeIfNeeded()
-            // Por defecto, intentar iniciar con el último usuario registrado
             val firebaseEmail = authRepository.currentUser?.email?.trim()?.lowercase()
             val lastUser = repository.getLastRegisteredUser()
-            if (firebaseEmail != null) {
+            val rememberMe = repository.isRememberMe()
+
+            if (rememberMe && firebaseEmail != null) {
                 activateAccount(firebaseEmail, rememberMe = true, fallbackName = authRepository.currentUser?.displayName)
+            } else if (rememberMe && lastUser != null) {
+                activateAccount(lastUser.email, rememberMe = true, fallbackName = lastUser.name)
             } else if (lastUser != null) {
                 savedUser = lastUser
-                // NOTA: Ya no logueamos automáticamente (activeUserEmail = lastUser.email)
-                // para obligar al usuario a usar la huella (estilo Yape).
             }
         }
     }
@@ -137,6 +144,11 @@ var selectedCloudUserEmail by mutableStateOf("")
                     val newMap = cloudCalendar.toMutableMap()
                     newMap["Intercambios"] = ev
                     cloudCalendar = newMap
+                }
+            }
+            viewModelScope.launch {
+                firebaseRequestRepository.getRequestsForUser(email).collect { reqs ->
+                    cloudRequests = reqs
                 }
             }
 chats = repository.getChats(email)
@@ -209,14 +221,16 @@ chats = repository.getChats(email)
 
         if (rememberMe) {
             repository.saveLastLoggedInEmail(user.email)
+            repository.setRememberMe(true)
         } else {
             repository.clearLastLoggedInEmail()
+            repository.setRememberMe(false)
         }
 
         activeUserEmail = user.email
         currentCloudUser = cloudProfile
         currentUser = user
-        savedUser = if (rememberMe) user else null
+        savedUser = user
         refreshAll()
         return user
     }
@@ -359,7 +373,25 @@ chats = repository.getChats(email)
         authRepository.logout()
         activeUserEmail = null
         currentUser = null
+        savedUser = null
+        repository.setRememberMe(false)
+        repository.clearLastLoggedInEmail()
         viewModelScope.launch {
+            refreshAll()
+        }
+    }
+
+    fun deleteAccount() {
+        val email = activeUserEmail
+        viewModelScope.launch {
+            if (email != null) {
+                repository.clearLastLoggedInEmail()
+                repository.setRememberMe(false)
+            }
+            authRepository.logout()
+            activeUserEmail = null
+            currentUser = null
+            savedUser = null
             refreshAll()
         }
     }
@@ -426,40 +458,85 @@ chats = repository.getChats(email)
     }
 
     fun bookClass(mentorId: Int, date: String, hour: String, mode: String) {
-        val email = activeUserEmail ?: return
-        val userProfile = cloudUsers.find { it.email == selectedCloudUserEmail }
-        
-        viewModelScope.launch {
-            val event = CloudCalendarEvent(
-                title = "Clase con ${userProfile?.name ?: "Mentor"}",
-                time = "$date - $hour",
-                tag = mode,
-                initials = userProfile?.initials ?: "VR",
-                categoryTab = "Clases"
-            )
-            firebaseCalendarRepository.addEvent(email, event)
-        }
+        val targetEmail = selectedCloudUserEmail
+        bookClassWithUser(targetEmail, date, hour, mode)
     }
+
+    fun bookClassWithUser(recipientEmail: String, date: String, hour: String, mode: String) {
+        val myProfile = currentCloudUser ?: return
+        val targetUser = cloudUsers.find { it.email.equals(recipientEmail, ignoreCase = true) }
+        val targetName = targetUser?.name ?: "Mentor"
+
+        val request = CloudRequest(
+            senderEmail = myProfile.email,
+            senderName = myProfile.name,
+            senderInitials = myProfile.initials.ifEmpty { "SC" },
+            recipientEmail = recipientEmail,
+            recipientName = targetName,
+            type = "CLASE",
+            dateOrTime = "$date - $hour ($mode)",
+            status = "PENDIENTE"
+        )
+        firebaseRequestRepository.createRequest(request)
+    }
+
     fun requestExchange(mentorId: Int, teachSkill: String, learnSkill: String, message: String) {
+        val targetEmail = selectedCloudUserEmail
+        requestExchangeWithUser(targetEmail, teachSkill, learnSkill, message)
+    }
+
+    fun requestExchangeWithUser(recipientEmail: String, teachSkill: String, learnSkill: String, message: String) {
+        val myProfile = currentCloudUser ?: return
+        val targetUser = cloudUsers.find { it.email.equals(recipientEmail, ignoreCase = true) }
+        val targetName = targetUser?.name ?: "Usuario SkillConnect"
+
+        val request = CloudRequest(
+            senderEmail = myProfile.email,
+            senderName = myProfile.name,
+            senderInitials = myProfile.initials.ifEmpty { "SC" },
+            recipientEmail = recipientEmail,
+            recipientName = targetName,
+            type = "TRUEQUE",
+            teachSkill = teachSkill,
+            learnSkill = learnSkill,
+            message = message,
+            status = "PENDIENTE"
+        )
+        firebaseRequestRepository.createRequest(request)
+
+        val exchange = CloudExchange(
+            title = "${myProfile.name} enseña $teachSkill",
+            subtitle = "Busca aprender $learnSkill",
+            initials = myProfile.initials.ifEmpty { "SC" }
+        )
+        firebaseExchangeRepository.addExchange(exchange)
+    }
+
+    fun acceptRequest(request: CloudRequest) {
+        val myProfile = currentCloudUser ?: return
+        firebaseRequestRepository.updateRequestStatus(request.id, "ACEPTADO")
+
+        // Mensaje automático al chat
+        val email1 = request.senderEmail
+        val email2 = request.recipientEmail
+        val chatId = if (email1 < email2) "$email1-$email2" else "$email2-$email1"
+        val autoMsg = "¡Hola ${request.senderName}! He ACEPTADO tu propuesta de ${request.type.lowercase()}. ¡Coordinemos los detalles por aquí!"
+        firebaseChatRepository.sendMessage(chatId, myProfile.email, autoMsg)
+    }
+
+    fun rejectRequest(request: CloudRequest) {
+        firebaseRequestRepository.updateRequestStatus(request.id, "RECHAZADO")
+    }
+
+    fun deleteCalendarEvent(requestId: String, eventId: String = "") {
         val email = activeUserEmail ?: return
-        val userProfile = cloudUsers.find { it.email == selectedCloudUserEmail }
-
         viewModelScope.launch {
-            val event = CloudCalendarEvent(
-                title = "$teachSkill por $learnSkill con ${userProfile?.name ?: "Usuario"}",
-                time = "Petición Pendiente",
-                tag = "Intercambio",
-                initials = userProfile?.initials ?: "VR",
-                categoryTab = "Intercambios"
-            )
-            firebaseCalendarRepository.addEvent(email, event)
-
-            val exchange = CloudExchange(
-                title = "${currentUser?.name ?: "Usuario"} enseña $teachSkill",
-                subtitle = "Busca $learnSkill",
-                initials = currentUser?.initials ?: "VR"
-            )
-            firebaseExchangeRepository.addExchange(exchange)
+            if (requestId.isNotBlank()) {
+                firebaseRequestRepository.deleteRequest(requestId)
+            }
+            if (eventId.isNotBlank()) {
+                firebaseCalendarRepository.deleteEvent(email, eventId)
+            }
         }
     }
 
@@ -514,6 +591,18 @@ fun addSkill(name: String, level: String) {
         }
     }
 
+    fun sendCloudPdf(chatId: String, fileName: String, base64Content: String) {
+        val email = activeUserEmail ?: return
+        firebaseChatRepository.sendFileMessage(
+            chatId = chatId,
+            senderEmail = email,
+            text = "📄 Documento PDF: $fileName",
+            fileUrl = base64Content,
+            fileName = fileName,
+            fileType = "PDF"
+        )
+    }
+
 fun clearChatUnread(id: Int) {
         val email = activeUserEmail ?: return
         viewModelScope.launch {
@@ -521,7 +610,5 @@ fun clearChatUnread(id: Int) {
             refreshAll()
         }
     }
-
-
 
 }

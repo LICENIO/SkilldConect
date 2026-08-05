@@ -13,7 +13,10 @@ data class CloudCalendarEvent(
     val time: String = "",
     val tag: String = "",
     val initials: String = "",
-    val categoryTab: String = "Clases"
+    val categoryTab: String = "Clases",
+    val partnerEmail: String = "",
+    val partnerName: String = "",
+    val status: String = "ACEPTADO"
 )
 
 class FirebaseCalendarRepository {
@@ -36,9 +39,15 @@ class FirebaseCalendarRepository {
     }
 
     fun addEvent(email: String, event: CloudCalendarEvent) {
-        val eventId = UUID.randomUUID().toString()
+        val eventId = if (event.id.isBlank()) UUID.randomUUID().toString() else event.id
         val newEvent = event.copy(id = eventId)
         db.collection("users").document(email).collection("calendar").document(eventId).set(newEvent)
             .addOnFailureListener { e -> Log.e("Firebase", "Error saving calendar event", e) }
+    }
+
+    fun deleteEvent(email: String, eventId: String) {
+        if (email.isBlank() || eventId.isBlank()) return
+        db.collection("users").document(email).collection("calendar").document(eventId).delete()
+            .addOnFailureListener { e -> Log.e("Firebase", "Error deleting calendar event", e) }
     }
 }

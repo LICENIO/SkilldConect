@@ -74,16 +74,53 @@ fun HomeScreen(viewModel: SkillConnectViewModel, onNavigate: (String) -> Unit) {
                         Text("¡Hola, ${user?.name ?: "Usuario"}! 👋", fontSize = 14.sp, color = Color.White.copy(alpha = 0.85f))
                         Text("¿Qué quieres aprender hoy?", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color.White)
                     }
-                    Spacer(modifier = Modifier.width(10.dp))
-                    Box(
-                        modifier = Modifier.clickable { onNavigate("profile") }
-                    ) {
-                        NeumorphicLogo(
-                            initials = user?.initials ?: "VR",
-                            size = 50.dp,
-                            backgroundColor = NeumorphicColors.accentYellow,
-                            textColor = NeumorphicColors.text
-                        )
+                    val myEmail = viewModel.activeUserEmail ?: ""
+                    val pendingCount = viewModel.cloudRequests.count { 
+                        it.recipientEmail.equals(myEmail, ignoreCase = true) && it.status == "PENDIENTE" 
+                    }
+
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(
+                            modifier = Modifier
+                                .clickable { onNavigate("notifications") }
+                                .padding(6.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Notifications,
+                                contentDescription = "Notificaciones",
+                                tint = Color.White,
+                                modifier = Modifier.size(28.dp)
+                            )
+                            if (pendingCount > 0) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(18.dp)
+                                        .background(Color(0xFFEF4444), CircleShape)
+                                        .align(Alignment.TopEnd),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = "$pendingCount",
+                                        color = Color.White,
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.width(8.dp))
+
+                        Box(
+                            modifier = Modifier.clickable { onNavigate("profile") }
+                        ) {
+                            NeumorphicLogo(
+                                initials = user?.initials ?: "VR",
+                                size = 46.dp,
+                                backgroundColor = NeumorphicColors.accentYellow,
+                                textColor = NeumorphicColors.text
+                            )
+                        }
                     }
                 }
 
@@ -251,19 +288,63 @@ fun HomeScreen(viewModel: SkillConnectViewModel, onNavigate: (String) -> Unit) {
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            viewModel.cloudExchanges.forEach { exchange ->
+            if (viewModel.cloudExchanges.isEmpty()) {
                 NeumorphicCard(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(vertical = 6.dp),
+                        .padding(vertical = 6.dp)
+                        .clickable { onNavigate("exchange") },
                     backgroundColor = Color.White
                 ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        NeumorphicLogo(exchange.initials, size = 44.dp, backgroundColor = NeumorphicColors.primary)
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(4.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(40.dp)
+                                .background(Color(0xFFEFF6FF), CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.SwapHoriz,
+                                contentDescription = null,
+                                tint = NeumorphicColors.primary,
+                                modifier = Modifier.size(22.dp)
+                            )
+                        }
                         Spacer(modifier = Modifier.width(12.dp))
-                        Column {
-                            Text(exchange.title, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = NeumorphicColors.text)
-                            Text(exchange.subtitle, fontSize = 12.sp, color = NeumorphicColors.muted)
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Sin publicaciones de trueque aún",
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = NeumorphicColors.text
+                            )
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = "Toca aquí para proponer tu primer trueque de habilidades.",
+                                fontSize = 12.sp,
+                                color = NeumorphicColors.muted
+                            )
+                        }
+                    }
+                }
+            } else {
+                viewModel.cloudExchanges.forEach { exchange ->
+                    NeumorphicCard(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 6.dp),
+                        backgroundColor = Color.White
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            NeumorphicLogo(exchange.initials, size = 44.dp, backgroundColor = NeumorphicColors.primary)
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column {
+                                Text(exchange.title, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = NeumorphicColors.text)
+                                Text(exchange.subtitle, fontSize = 12.sp, color = NeumorphicColors.muted)
+                            }
                         }
                     }
                 }

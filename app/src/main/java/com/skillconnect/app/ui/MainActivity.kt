@@ -14,6 +14,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.listSaver
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -53,12 +55,15 @@ class MainActivity : FragmentActivity() {
 
 @Composable
 fun AppContent(viewModel: SkillConnectViewModel) {
-    var currentScreen by remember { mutableStateOf("splash") }
-    val history = remember { mutableStateListOf<String>() }
+    var currentScreen by rememberSaveable { mutableStateOf("splash") }
+    val history = rememberSaveable(saver = listSaver(
+        save = { it.toList() },
+        restore = { mutableStateListOf<String>().apply { addAll(it) } }
+    )) { mutableStateListOf<String>() }
     val navScreens = setOf("home", "search", "messages", "calendar", "profile")
 
-    var activeSearchFilter by remember { mutableStateOf("Todos") }
-    var activeCalendarTab by remember { mutableStateOf("Clases") }
+    var activeSearchFilter by rememberSaveable { mutableStateOf("Todos") }
+    var activeCalendarTab by rememberSaveable { mutableStateOf("Clases") }
 
     val activeEmail = viewModel.activeUserEmail
 
@@ -109,7 +114,9 @@ fun AppContent(viewModel: SkillConnectViewModel) {
         ) {
             when (currentScreen) {
                 "splash" -> SplashScreen(onFinished = { 
-                    if (viewModel.savedUser != null) {
+                    if (viewModel.activeUserEmail != null) {
+                        navigateTo("home")
+                    } else if (viewModel.savedUser != null) {
                         navigateTo("login")
                     } else {
                         navigateTo("welcome")
@@ -173,7 +180,8 @@ fun AppContent(viewModel: SkillConnectViewModel) {
                 "calendar" -> CalendarScreen(
                     viewModel = viewModel,
                     activeTab = activeCalendarTab,
-                    onTabChange = { activeCalendarTab = it }
+                    onTabChange = { activeCalendarTab = it },
+                    onNavigate = { navigateTo(it) }
                 )
                 "profile" -> ProfileScreen(viewModel, onNavigate = { navigateTo(it) })
                 "skills" -> SkillsScreen(viewModel, onBack = { navigateBack() })
@@ -181,7 +189,7 @@ fun AppContent(viewModel: SkillConnectViewModel) {
                 "settings" -> SettingsScreen(viewModel, onBack = { navigateBack() })
                 "statistics" -> StatisticsScreen(onBack = { navigateBack() })
                 "achievements" -> AchievementsScreen(viewModel, onBack = { navigateBack() })
-                "notifications" -> NotificationsScreen(viewModel, onBack = { navigateBack() })
+                "notifications" -> NotificationsScreen(viewModel, onNavigate = { navigateTo(it) }, onBack = { navigateBack() })
             }
         }
     }

@@ -46,7 +46,9 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun BookingScreen(viewModel: SkillConnectViewModel, onFinished: () -> Unit, onBack: () -> Unit) {
-    val user = viewModel.cloudUsers.find { it.email == viewModel.selectedCloudUserEmail } ?: return
+    val user = viewModel.cloudUsers.find { it.email == viewModel.selectedCloudUserEmail } 
+        ?: viewModel.cloudUsers.firstOrNull()
+
     val dates = listOf("Lun 6", "Mar 7", "Mié 8", "Jue 9", "Vie 10")
     val hours = listOf("9:00 AM", "11:00 AM", "3:00 PM", "5:00 PM")
     val modes = listOf("Virtual", "Presencial")
@@ -66,76 +68,80 @@ fun BookingScreen(viewModel: SkillConnectViewModel, onFinished: () -> Unit, onBa
     ) {
         NeumorphicTopBar("Reservar clase", onBack)
 
-        NeumorphicCard(modifier = Modifier.fillMaxWidth()) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                NeumorphicLogo(user.initials.ifEmpty { "VR" }, size = 46.dp, backgroundColor = NeumorphicColors.primary)
-                Spacer(modifier = Modifier.width(12.dp))
-                Column {
-                    Text(user.name, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = NeumorphicColors.text)
-                    Text(user.teachSkills.joinToString(", "), fontSize = 13.sp, color = NeumorphicColors.muted)
+        if (user != null) {
+            NeumorphicCard(modifier = Modifier.fillMaxWidth()) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    NeumorphicLogo(user.initials.ifEmpty { "VR" }, size = 46.dp, backgroundColor = NeumorphicColors.primary)
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column {
+                        Text(user.name, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = NeumorphicColors.text)
+                        Text(if (user.teachSkills.isNotEmpty()) user.teachSkills.joinToString(", ") else "Mentor SkillConnect", fontSize = 13.sp, color = NeumorphicColors.muted)
+                    }
                 }
             }
-        }
 
-        Spacer(modifier = Modifier.height(22.dp))
+            Spacer(modifier = Modifier.height(22.dp))
 
-        Text("Selecciona una fecha", fontWeight = FontWeight.Bold, fontSize = 15.sp)
-        Spacer(modifier = Modifier.height(10.dp))
-        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            items(dates) { date ->
-                NeumorphicChip(text = date, selected = selectedDate == date, onClick = { selectedDate = date })
+            Text("Selecciona una fecha", fontWeight = FontWeight.Bold, fontSize = 15.sp)
+            Spacer(modifier = Modifier.height(10.dp))
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                items(dates) { date ->
+                    NeumorphicChip(text = date, selected = selectedDate == date, onClick = { selectedDate = date })
+                }
             }
-        }
 
-        Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(20.dp))
 
-        Text("Hora disponible", fontWeight = FontWeight.Bold, fontSize = 15.sp)
-        Spacer(modifier = Modifier.height(10.dp))
-        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            items(hours) { hour ->
-                NeumorphicChip(text = hour, selected = selectedHour == hour, onClick = { selectedHour = hour })
+            Text("Hora disponible", fontWeight = FontWeight.Bold, fontSize = 15.sp)
+            Spacer(modifier = Modifier.height(10.dp))
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                items(hours) { hour ->
+                    NeumorphicChip(text = hour, selected = selectedHour == hour, onClick = { selectedHour = hour })
+                }
             }
-        }
 
-        Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(20.dp))
 
-        Text("Modalidad", fontWeight = FontWeight.Bold, fontSize = 15.sp)
-        Spacer(modifier = Modifier.height(10.dp))
-        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            items(modes) { mode ->
-                NeumorphicChip(text = mode, selected = selectedMode == mode, onClick = { selectedMode = mode })
+            Text("Modalidad", fontWeight = FontWeight.Bold, fontSize = 15.sp)
+            Spacer(modifier = Modifier.height(10.dp))
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                items(modes) { mode ->
+                    NeumorphicChip(text = mode, selected = selectedMode == mode, onClick = { selectedMode = mode })
+                }
             }
-        }
 
-        Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
-        NeumorphicCard(modifier = Modifier.fillMaxWidth()) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+            NeumorphicCard(modifier = Modifier.fillMaxWidth()) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("Precio por hora", fontSize = 15.sp, color = NeumorphicColors.muted)
+                    Text(
+                        text = if (user.hourlyRate == 0) "Gratis" else "S/ ${user.hourlyRate}.00",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = NeumorphicColors.text
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(28.dp))
+
+            NeumorphicButton(
+                onClick = {
+                    viewModel.bookClassWithUser(user.email, selectedDate, selectedHour, selectedMode)
+                    Toast.makeText(context, "¡Solicitud de reserva enviada a ${user.name}!", Toast.LENGTH_SHORT).show()
+                    onFinished()
+                },
+                modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Precio por hora", fontSize = 15.sp, color = NeumorphicColors.muted)
-                Text(
-                    text = if (user.hourlyRate == 0) "Gratis" else "S/ ${user.hourlyRate}.00",
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = NeumorphicColors.text
-                )
+                Text("Confirmar solicitud de reserva", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
             }
-        }
-
-        Spacer(modifier = Modifier.height(28.dp))
-
-        NeumorphicButton(
-            onClick = {
-                viewModel.bookClass(1, selectedDate, selectedHour, selectedMode) // mentorId unused now
-                Toast.makeText(context, "Clase reservada con éxito", Toast.LENGTH_SHORT).show()
-                onFinished()
-            },
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("Confirmar reserva", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+        } else {
+            Text("No se encontró ningún mentor disponible para reservar.", color = NeumorphicColors.muted)
         }
     }
 }

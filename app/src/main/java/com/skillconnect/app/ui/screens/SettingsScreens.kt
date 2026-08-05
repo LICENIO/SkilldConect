@@ -397,44 +397,245 @@ fun AchievementsScreen(viewModel: SkillConnectViewModel, onBack: () -> Unit) {
 }
 
 @Composable
-fun NotificationsScreen(viewModel: SkillConnectViewModel, onBack: () -> Unit) {
+fun NotificationsScreen(viewModel: SkillConnectViewModel, onNavigate: (String) -> Unit, onBack: () -> Unit) {
+    var activeTab by remember { mutableStateOf("Recibidas") } // "Recibidas", "Enviadas"
+    val context = LocalContext.current
+    val myEmail = viewModel.activeUserEmail ?: ""
+
+    val receivedRequests = viewModel.cloudRequests.filter { it.recipientEmail.equals(myEmail, ignoreCase = true) }
+    val sentRequests = viewModel.cloudRequests.filter { it.senderEmail.equals(myEmail, ignoreCase = true) }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(NeumorphicColors.bg)
             .padding(20.dp)
     ) {
-        NeumorphicTopBar("Notificaciones", onBack)
+        NeumorphicTopBar("Centro de Solicitudes y Alertas", onBack)
 
-        LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            items(viewModel.notifications) { item ->
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(if (activeTab == "Recibidas") NeumorphicColors.primary else Color.White)
+                    .clickable { activeTab = "Recibidas" }
+                    .padding(vertical = 10.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "Recibidas (${receivedRequests.size})",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 13.sp,
+                    color = if (activeTab == "Recibidas") Color.White else NeumorphicColors.text
+                )
+            }
+
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(if (activeTab == "Enviadas") NeumorphicColors.primary else Color.White)
+                    .clickable { activeTab = "Enviadas" }
+                    .padding(vertical = 10.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "Enviadas (${sentRequests.size})",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 13.sp,
+                    color = if (activeTab == "Enviadas") Color.White else NeumorphicColors.text
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        val displayList = if (activeTab == "Recibidas") receivedRequests else sentRequests
+
+        if (displayList.isEmpty()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .weight(1f),
+                contentAlignment = Alignment.Center
+            ) {
                 NeumorphicCard(
-                    modifier = Modifier.fillMaxWidth(),
-                    backgroundColor = if (item.unread) Color(0xFFEEF5FF) else Color.White
+                    modifier = Modifier.fillMaxWidth(0.9f),
+                    backgroundColor = Color.White
                 ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Box(
-                            modifier = Modifier
-                                .size(44.dp)
-                                .background(
-                                    if (item.unread) NeumorphicColors.primary.copy(alpha = 0.1f) else Color.LightGray.copy(alpha = 0.2f),
-                                    CircleShape
-                                ),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = if (item.unread) Icons.Default.NotificationImportant else Icons.Default.Notifications,
-                                contentDescription = null,
-                                tint = if (item.unread) NeumorphicColors.primary else NeumorphicColors.muted,
-                                modifier = Modifier.size(24.dp)
-                            )
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.padding(16.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.NotificationsNone,
+                            contentDescription = null,
+                            tint = NeumorphicColors.muted,
+                            modifier = Modifier.size(48.dp)
+                        )
+                        Spacer(modifier = Modifier.height(10.dp))
+                        Text(
+                            text = if (activeTab == "Recibidas") "Sin solicitudes recibidas" else "Sin propuestas enviadas",
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = NeumorphicColors.text
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = if (activeTab == "Recibidas") "Cuando otros usuarios te propongan un trueque o clase, aparecerán aquí para aceptar o rechazar." else "Tus propuestas enviadas a mentores aparecerán aquí.",
+                            fontSize = 12.sp,
+                            color = NeumorphicColors.muted,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                }
+            }
+        } else {
+            LazyColumn(
+                verticalArrangement = Arrangement.spacedBy(14.dp),
+                modifier = Modifier.weight(1f)
+            ) {
+                items(displayList) { req ->
+                    val isPending = req.status == "PENDIENTE"
+                    val isAccepted = req.status == "ACEPTADO"
+                    val isRejected = req.status == "RECHAZADO"
+
+                    NeumorphicCard(
+                        modifier = Modifier.fillMaxWidth(),
+                        backgroundColor = when {
+                            isPending -> Color(0xFFEFF6FF)
+                            isAccepted -> Color(0xFFF0FDF4)
+                            else -> Color(0xFFFEF2F2)
                         }
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(item.title, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = NeumorphicColors.text)
-                            Text(item.description, fontSize = 13.sp, color = NeumorphicColors.muted)
-                            Spacer(modifier = Modifier.height(2.dp))
-                            Text(item.time, fontSize = 11.sp, color = NeumorphicColors.muted, fontWeight = FontWeight.Bold)
+                    ) {
+                        Column {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                NeumorphicLogo(
+                                    initials = if (activeTab == "Recibidas") req.senderInitials else req.recipientName.take(2).uppercase(),
+                                    size = 46.dp,
+                                    backgroundColor = NeumorphicColors.primary
+                                )
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = if (req.type == "TRUEQUE") "🔄 Solicitud de Trueque" else "🎓 Reserva de Clase",
+                                        fontSize = 15.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = NeumorphicColors.text
+                                    )
+                                    Text(
+                                        text = if (activeTab == "Recibidas") "De: ${req.senderName}" else "Para: ${req.recipientName}",
+                                        fontSize = 13.sp,
+                                        color = NeumorphicColors.muted
+                                    )
+                                }
+
+                                // Badge de Estado
+                                val statusText = when {
+                                    isPending -> "🟡 Pendiente"
+                                    isAccepted -> "🟢 Aceptado"
+                                    else -> "🔴 Rechazado"
+                                }
+                                val statusColor = when {
+                                    isPending -> Color(0xFFD97706)
+                                    isAccepted -> Color(0xFF16A34A)
+                                    else -> Color(0xFFDC2626)
+                                }
+                                Text(
+                                    text = statusText,
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = statusColor
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.height(10.dp))
+
+                            // Detalles de la propuesta
+                            if (req.type == "TRUEQUE") {
+                                Text(
+                                    text = "• Enseña: ${req.teachSkill.ifEmpty { "General" }}\n• Desea aprender: ${req.learnSkill.ifEmpty { "General" }}",
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    color = NeumorphicColors.text
+                                )
+                            } else {
+                                Text(
+                                    text = "• Horario propuesto: ${req.dateOrTime}",
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    color = NeumorphicColors.text
+                                )
+                            }
+
+                            if (req.message.isNotBlank()) {
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = "\"${req.message}\"",
+                                    fontSize = 12.sp,
+                                    color = NeumorphicColors.muted,
+                                    style = androidx.compose.ui.text.TextStyle(fontStyle = androidx.compose.ui.text.font.FontStyle.Italic)
+                                )
+                            }
+
+                            // ACCIONES
+                            if (activeTab == "Recibidas" && isPending) {
+                                Spacer(modifier = Modifier.height(14.dp))
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                ) {
+                                    Button(
+                                        onClick = {
+                                            viewModel.acceptRequest(req)
+                                            viewModel.selectedCloudUserEmail = req.senderEmail
+                                            Toast.makeText(context, "¡Propuesta Aceptada! Abriendo chat...", Toast.LENGTH_SHORT).show()
+                                            onNavigate("chat")
+                                        },
+                                        modifier = Modifier.weight(1f),
+                                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF16A34A)),
+                                        shape = RoundedCornerShape(10.dp)
+                                    ) {
+                                        Icon(Icons.Default.Check, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Text("ACEPTAR", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                    }
+
+                                    OutlinedButton(
+                                        onClick = {
+                                            viewModel.rejectRequest(req)
+                                            Toast.makeText(context, "Solicitud rechazada", Toast.LENGTH_SHORT).show()
+                                        },
+                                        modifier = Modifier.weight(1f),
+                                        colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFDC2626)),
+                                        shape = RoundedCornerShape(10.dp)
+                                    ) {
+                                        Icon(Icons.Default.Close, contentDescription = null, tint = Color(0xFFDC2626), modifier = Modifier.size(16.dp))
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Text("RECHAZAR", color = Color(0xFFDC2626), fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                    }
+                                }
+                            } else if (isAccepted) {
+                                Spacer(modifier = Modifier.height(14.dp))
+                                Button(
+                                    onClick = {
+                                        val partnerEmail = if (activeTab == "Recibidas") req.senderEmail else req.recipientEmail
+                                        viewModel.selectedCloudUserEmail = partnerEmail
+                                        onNavigate("chat")
+                                    },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    colors = ButtonDefaults.buttonColors(containerColor = NeumorphicColors.primary),
+                                    shape = RoundedCornerShape(10.dp)
+                                ) {
+                                    Icon(Icons.Default.Chat, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text("💬 Abrir Chat de Coordinación", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                }
+                            }
                         }
                     }
                 }

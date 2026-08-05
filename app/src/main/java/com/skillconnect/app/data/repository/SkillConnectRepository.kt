@@ -54,6 +54,14 @@ class SkillConnectRepository(private val db: SkillConnectDatabase, private val c
         prefs.edit().remove("last_logged_in_email").apply()
     }
 
+    fun setRememberMe(remember: Boolean) {
+        prefs.edit().putBoolean("remember_me", remember).apply()
+    }
+
+    fun isRememberMe(): Boolean {
+        return prefs.getBoolean("remember_me", true)
+    }
+
 
     suspend fun getLastRegisteredUser(): UserEntity? {
         val lastEmail = prefs.getString("last_logged_in_email", null)

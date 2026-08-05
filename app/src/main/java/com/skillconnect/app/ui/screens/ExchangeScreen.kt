@@ -46,10 +46,11 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun ExchangeScreen(viewModel: SkillConnectViewModel, onFinished: () -> Unit, onBack: () -> Unit) {
-    val user = viewModel.cloudUsers.find { it.email == viewModel.selectedCloudUserEmail } ?: return
-    var teachInput by remember { mutableStateOf("Diseño gráfico") }
-    var learnInput by remember { mutableStateOf(user.teachSkills.firstOrNull() ?: "") }
-    var noteInput by remember { mutableStateOf("Hola, me encantaría intercambiar habilidades contigo.") }
+    var chosenUserEmail by remember { 
+        mutableStateOf(viewModel.selectedCloudUserEmail.ifEmpty { null }) 
+    }
+    
+    val selectedUser = viewModel.cloudUsers.find { it.email == chosenUserEmail }
     val context = LocalContext.current
 
     Column(
@@ -59,53 +60,191 @@ fun ExchangeScreen(viewModel: SkillConnectViewModel, onFinished: () -> Unit, onB
             .padding(20.dp)
             .verticalScroll(rememberScrollState())
     ) {
-        NeumorphicTopBar("Solicitar intercambio", onBack)
+        NeumorphicTopBar("Trueque de Habilidades", onBack = {
+            if (selectedUser != null && viewModel.selectedCloudUserEmail.isEmpty()) {
+                chosenUserEmail = null
+            } else {
+                onBack()
+            }
+        })
 
-        NeumorphicCard(modifier = Modifier.fillMaxWidth()) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                NeumorphicLogo(user.initials.ifEmpty { "VR" }, size = 46.dp, backgroundColor = NeumorphicColors.primary)
-                Spacer(modifier = Modifier.width(12.dp))
-                Column {
-                    Text(user.name, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = NeumorphicColors.text)
-                    Text(user.teachSkills.joinToString(", "), fontSize = 13.sp, color = NeumorphicColors.muted)
+        if (selectedUser == null) {
+            // PASO 1: Lista de usuarios disponibles para trueque
+            Text(
+                text = "Usuarios disponibles para Trueque 🔄",
+                fontSize = 17.sp,
+                fontWeight = FontWeight.Bold,
+                color = NeumorphicColors.text
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = "Selecciona a la persona con la que deseas intercambiar habilidades gratis.",
+                fontSize = 13.sp,
+                color = NeumorphicColors.muted
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            if (viewModel.cloudUsers.isEmpty()) {
+                NeumorphicCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    backgroundColor = Color.White
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.SwapHoriz,
+                            contentDescription = null,
+                            tint = NeumorphicColors.muted,
+                            modifier = Modifier.size(44.dp)
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "No hay usuarios disponibles para trueque",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 15.sp,
+                            color = NeumorphicColors.text,
+                            textAlign = TextAlign.Center
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "Aún no hay otros usuarios registrados en la red. Invita a tus compañeros a unirse a SkillConnect.",
+                            fontSize = 13.sp,
+                            color = NeumorphicColors.muted,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                }
+            } else {
+                viewModel.cloudUsers.forEach { user ->
+                    NeumorphicCard(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 6.dp)
+                            .clickable { chosenUserEmail = user.email },
+                        backgroundColor = Color.White
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            NeumorphicLogo(user.initials.ifEmpty { "SC" }, size = 48.dp, backgroundColor = NeumorphicColors.primary)
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(user.name, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = NeumorphicColors.text)
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = if (user.teachSkills.isNotEmpty()) "Enseña: ${user.teachSkills.joinToString(", ")}" else "Conocimiento variado",
+                                    fontSize = 12.sp,
+                                    color = NeumorphicColors.muted
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = "★ ${user.rating} · Trueque Gratuito",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = NeumorphicColors.primary
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(10.dp))
+                                    .background(NeumorphicColors.primary)
+                                    .padding(horizontal = 10.dp, vertical = 6.dp)
+                            ) {
+                                Text("Trueque", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
                 }
             }
-        }
+        } else {
+            // PASO 2: Formulario de propuesta para el usuario seleccionado
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Propuesta para ${selectedUser.name.split(" ").first()}",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = NeumorphicColors.text
+                )
+                if (viewModel.selectedCloudUserEmail.isEmpty()) {
+                    Text(
+                        text = "Cambiar usuario",
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = NeumorphicColors.primary,
+                        modifier = Modifier.clickable { chosenUserEmail = null }
+                    )
+                }
+            }
 
-        Spacer(modifier = Modifier.height(22.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
-        Text("¿Qué enseñas tú?", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = NeumorphicColors.muted)
-        Spacer(modifier = Modifier.height(6.dp))
-        NeumorphicTextField(value = teachInput, onValueChange = { teachInput = it }, placeholder = "Ej. Dibujo, Alemán...")
+            NeumorphicCard(modifier = Modifier.fillMaxWidth()) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    NeumorphicLogo(selectedUser.initials.ifEmpty { "SC" }, size = 46.dp, backgroundColor = NeumorphicColors.primary)
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column {
+                        Text(selectedUser.name, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = NeumorphicColors.text)
+                        Text(
+                            text = if (selectedUser.teachSkills.isNotEmpty()) "Enseña: ${selectedUser.teachSkills.joinToString(", ")}" else "Usuario SkillConnect",
+                            fontSize = 13.sp,
+                            color = NeumorphicColors.muted
+                        )
+                    }
+                }
+            }
 
-        Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(20.dp))
 
-        Text("¿Qué deseas aprender?", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = NeumorphicColors.muted)
-        Spacer(modifier = Modifier.height(6.dp))
-        NeumorphicTextField(value = learnInput, onValueChange = { learnInput = it }, placeholder = "La especialidad del mentor")
+            var teachInput by remember(selectedUser.email) { mutableStateOf("Diseño gráfico") }
+            var learnInput by remember(selectedUser.email) { mutableStateOf(selectedUser.teachSkills.firstOrNull() ?: "Programación") }
+            var noteInput by remember(selectedUser.email) { mutableStateOf("Hola ${selectedUser.name.split(" ").first()}, me encantaría intercambiar habilidades contigo.") }
 
-        Spacer(modifier = Modifier.height(16.dp))
+            Text("¿Qué enseñas tú?", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = NeumorphicColors.muted)
+            Spacer(modifier = Modifier.height(6.dp))
+            NeumorphicTextField(value = teachInput, onValueChange = { teachInput = it }, placeholder = "Ej. Dibujo, Alemán, Guitarra...")
 
-        Text("Mensaje personalizado", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = NeumorphicColors.muted)
-        Spacer(modifier = Modifier.height(6.dp))
-        NeumorphicTextField(
-            value = noteInput,
-            onValueChange = { noteInput = it },
-            placeholder = "Preséntate y propone tu idea...",
-            singleLine = false
-        )
+            Spacer(modifier = Modifier.height(16.dp))
 
-        Spacer(modifier = Modifier.height(28.dp))
+            Text("¿Qué deseas aprender de ${selectedUser.name.split(" ").first()}?", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = NeumorphicColors.muted)
+            Spacer(modifier = Modifier.height(6.dp))
+            NeumorphicTextField(value = learnInput, onValueChange = { learnInput = it }, placeholder = "Ej. Python, Inglés, Marketing...")
 
-        NeumorphicButton(
-            onClick = {
-                viewModel.requestExchange(1, teachInput, learnInput, noteInput)
-                Toast.makeText(context, "Solicitud de intercambio enviada", Toast.LENGTH_SHORT).show()
-                onFinished()
-            },
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("Enviar propuesta de trueque", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Text("Mensaje personalizado", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = NeumorphicColors.muted)
+            Spacer(modifier = Modifier.height(6.dp))
+            NeumorphicTextField(
+                value = noteInput,
+                onValueChange = { noteInput = it },
+                placeholder = "Preséntate y propone tu idea...",
+                singleLine = false
+            )
+
+            Spacer(modifier = Modifier.height(28.dp))
+
+            NeumorphicButton(
+                onClick = {
+                    if (teachInput.isBlank() || learnInput.isBlank()) {
+                        Toast.makeText(context, "Por favor completa qué enseñas y qué deseas aprender", Toast.LENGTH_SHORT).show()
+                    } else {
+                        viewModel.requestExchangeWithUser(selectedUser.email, teachInput, learnInput, noteInput)
+                        Toast.makeText(context, "¡Propuesta de trueque enviada a ${selectedUser.name}!", Toast.LENGTH_SHORT).show()
+                        onFinished()
+                    }
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Enviar propuesta a ${selectedUser.name.split(" ").first()}", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+            }
         }
     }
 }

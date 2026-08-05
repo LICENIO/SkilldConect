@@ -12,7 +12,10 @@ data class CloudMessage(
     val id: String = "",
     val senderEmail: String = "",
     val text: String = "",
-    val timestamp: Long = 0L
+    val timestamp: Long = System.currentTimeMillis(),
+    val fileUrl: String = "",
+    val fileName: String = "",
+    val fileType: String = "" // "PDF" or ""
 )
 
 class FirebaseChatRepository {
@@ -37,8 +40,28 @@ class FirebaseChatRepository {
 
     fun sendMessage(chatId: String, senderEmail: String, text: String) {
         val msgId = UUID.randomUUID().toString()
-        val msg = CloudMessage(msgId, senderEmail, text, System.currentTimeMillis())
+        val msg = CloudMessage(
+            id = msgId,
+            senderEmail = senderEmail,
+            text = text,
+            timestamp = System.currentTimeMillis()
+        )
         chatsCollection.document(chatId).collection("messages").document(msgId).set(msg)
             .addOnFailureListener { e -> Log.e("Firebase", "Error sending message", e) }
+    }
+
+    fun sendFileMessage(chatId: String, senderEmail: String, text: String, fileUrl: String, fileName: String, fileType: String = "PDF") {
+        val msgId = UUID.randomUUID().toString()
+        val msg = CloudMessage(
+            id = msgId,
+            senderEmail = senderEmail,
+            text = text,
+            timestamp = System.currentTimeMillis(),
+            fileUrl = fileUrl,
+            fileName = fileName,
+            fileType = fileType
+        )
+        chatsCollection.document(chatId).collection("messages").document(msgId).set(msg)
+            .addOnFailureListener { e -> Log.e("Firebase", "Error sending PDF file message", e) }
     }
 }
