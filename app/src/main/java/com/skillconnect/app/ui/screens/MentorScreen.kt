@@ -169,7 +169,8 @@ fun MentorScreen(
             NeumorphicButton(
                 onClick = onExchange,
                 modifier = Modifier.weight(1f),
-                backgroundColor = Color.White
+                backgroundColor = Color.White,
+                gradientBrush = null
             ) {
                 Text("Proponer Trueque", color = NeumorphicColors.primary, fontWeight = FontWeight.Bold, fontSize = 14.sp)
             }

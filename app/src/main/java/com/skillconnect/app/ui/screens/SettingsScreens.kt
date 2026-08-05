@@ -84,7 +84,7 @@ fun SkillsScreen(viewModel: SkillConnectViewModel, onBack: () -> Unit) {
                 onClick = { showAddDialog = true },
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Agregar habilidad", color = NeumorphicColors.primary, fontWeight = FontWeight.Bold)
+                Text("Agregar habilidad", color = Color.White, fontWeight = FontWeight.Bold)
             }
         }
         
@@ -130,7 +130,9 @@ fun SkillsScreen(viewModel: SkillConnectViewModel, onBack: () -> Unit) {
                                     showAddDialog = false
                                     newSkillName = ""
                                 },
-                                modifier = Modifier.weight(1f)
+                                modifier = Modifier.weight(1f),
+                                backgroundColor = NeumorphicColors.surface,
+                                gradientBrush = null
                             ) {
                                 Text("Cancelar", color = NeumorphicColors.muted, fontWeight = FontWeight.Bold)
                             }
@@ -148,7 +150,7 @@ fun SkillsScreen(viewModel: SkillConnectViewModel, onBack: () -> Unit) {
                                 },
                                 modifier = Modifier.weight(1f)
                             ) {
-                                Text("Guardar", color = NeumorphicColors.primary, fontWeight = FontWeight.Bold)
+                                Text("Guardar", color = Color.White, fontWeight = FontWeight.Bold)
                             }
                         }
                     }
@@ -211,10 +213,18 @@ fun SettingsScreen(viewModel: SkillConnectViewModel, onBack: () -> Unit) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text("Modo oscuro", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = NeumorphicColors.text)
-                Switch(checked = darkMode, onCheckedChange = { 
-                    darkMode = it 
-                    NeumorphicColors.setDarkMode(it)
-                })
+                Switch(
+                    checked = darkMode,
+                    onCheckedChange = {
+                        darkMode = it
+                        NeumorphicColors.setDarkMode(it)
+                    },
+                    colors = SwitchDefaults.colors(
+                        checkedThumbColor = Color.White,
+                        checkedTrackColor = NeumorphicColors.accent,
+                        uncheckedThumbColor = NeumorphicColors.muted
+                    )
+                )
             }
         }
 
@@ -288,14 +298,24 @@ fun StatisticsScreen(onBack: () -> Unit) {
         ) {
             NeumorphicCard(modifier = Modifier.weight(1f)) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
-                    Text("86h", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = NeumorphicColors.primary)
-                    Text("Horas enseñadas", fontSize = 12.sp, color = NeumorphicColors.muted)
+                    Text(
+                        "86h",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = NeumorphicColors.primary
+                    )
+                    Text("Horas enseñadas", fontSize = 12.sp, color = NeumorphicColors.muted, fontWeight = FontWeight.Medium)
                 }
             }
             NeumorphicCard(modifier = Modifier.weight(1f)) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
-                    Text("54h", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = NeumorphicColors.primary)
-                    Text("Horas aprendidas", fontSize = 12.sp, color = NeumorphicColors.muted)
+                    Text(
+                        "54h",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = NeumorphicColors.primary
+                    )
+                    Text("Horas aprendidas", fontSize = 12.sp, color = NeumorphicColors.muted, fontWeight = FontWeight.Medium)
                 }
             }
         }
@@ -308,21 +328,37 @@ fun StatisticsScreen(onBack: () -> Unit) {
         ) {
             NeumorphicCard(modifier = Modifier.weight(1f)) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
-                    Text("18", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = NeumorphicColors.primary)
-                    Text("Intercambios", fontSize = 12.sp, color = NeumorphicColors.muted)
+                    Text(
+                        "18",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = NeumorphicColors.accent
+                    )
+                    Text("Intercambios", fontSize = 12.sp, color = NeumorphicColors.muted, fontWeight = FontWeight.Medium)
                 }
             }
             NeumorphicCard(modifier = Modifier.weight(1f)) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
-                    Text("4.9", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = NeumorphicColors.primary)
-                    Text("Calificación", fontSize = 12.sp, color = NeumorphicColors.muted)
+                    Text(
+                        "4.9 ★",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = NeumorphicColors.accent
+                    )
+                    Text("Calificación", fontSize = 12.sp, color = NeumorphicColors.muted, fontWeight = FontWeight.Medium)
                 }
             }
         }
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        Text("Actividad semanal", fontSize = 17.sp, fontWeight = FontWeight.Bold, color = NeumorphicColors.text)
+        Text(
+            "Actividad semanal",
+            fontSize = 17.sp,
+            fontWeight = FontWeight.ExtraBold,
+            color = NeumorphicColors.text,
+            letterSpacing = (-0.3).sp
+        )
         Spacer(modifier = Modifier.height(10.dp))
 
         weeklyProgress.forEachIndexed { idx, progress ->

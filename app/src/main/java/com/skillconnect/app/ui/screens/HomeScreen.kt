@@ -5,9 +5,15 @@ import android.widget.Toast
 import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricPrompt
 import androidx.compose.animation.*
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.res.painterResource
 import com.skillconnect.app.R
 import androidx.compose.foundation.layout.*
@@ -53,16 +59,12 @@ fun HomeScreen(viewModel: SkillConnectViewModel, onNavigate: (String) -> Unit) {
             .fillMaxSize()
             .background(NeumorphicColors.bg)
     ) {
-        // Banner Superior Vibrante Celeste Eléctrico
+        // Banner Superior — Gradiente premium Azul Índigo → Violeta
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(
-                    androidx.compose.ui.graphics.Brush.horizontalGradient(
-                        listOf(Color(0xFF0099FF), Color(0xFF0066FF))
-                    )
-                )
-                .padding(horizontal = 20.dp, vertical = 20.dp)
+                .background(ButtonGradients.PrimaryBlueViolet)
+                .padding(horizontal = 20.dp, vertical = 22.dp)
         ) {
             Column {
                 Row(
@@ -71,18 +73,41 @@ fun HomeScreen(viewModel: SkillConnectViewModel, onNavigate: (String) -> Unit) {
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("¡Hola, ${user?.name ?: "Usuario"}! 👋", fontSize = 14.sp, color = Color.White.copy(alpha = 0.85f))
-                        Text("¿Qué quieres aprender hoy?", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                        Text(
+                            "¡Hola, ${user?.name ?: "Usuario"}!",
+                            fontSize = 13.sp,
+                            color = Color.White.copy(alpha = 0.80f),
+                            fontWeight = FontWeight.Medium
+                        )
+                        Text(
+                            "¿Qué quieres aprender hoy?",
+                            fontSize = 22.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = Color.White,
+                            letterSpacing = (-0.5).sp
+                        )
                     }
                     val myEmail = viewModel.activeUserEmail ?: ""
-                    val pendingCount = viewModel.cloudRequests.count { 
-                        it.recipientEmail.equals(myEmail, ignoreCase = true) && it.status == "PENDIENTE" 
+                    val pendingCount = viewModel.cloudRequests.count {
+                        it.recipientEmail.equals(myEmail, ignoreCase = true) && it.status == "PENDIENTE"
                     }
 
                     Row(verticalAlignment = Alignment.CenterVertically) {
+                        // Botón de notificaciones con micro-animación
+                        val notifInteraction = remember { MutableInteractionSource() }
+                        val notifPressed by notifInteraction.collectIsPressedAsState()
+                        val notifScale by animateFloatAsState(
+                            targetValue = if (notifPressed) 0.88f else 1f,
+                            animationSpec = spring(stiffness = Spring.StiffnessMedium),
+                            label = "notif_scale"
+                        )
                         Box(
                             modifier = Modifier
-                                .clickable { onNavigate("notifications") }
+                                .scale(notifScale)
+                                .clickable(
+                                    interactionSource = notifInteraction,
+                                    indication = null
+                                ) { onNavigate("notifications") }
                                 .padding(6.dp)
                         ) {
                             Icon(
@@ -95,7 +120,7 @@ fun HomeScreen(viewModel: SkillConnectViewModel, onNavigate: (String) -> Unit) {
                                 Box(
                                     modifier = Modifier
                                         .size(18.dp)
-                                        .background(Color(0xFFEF4444), CircleShape)
+                                        .background(Color(0xFFFF4757), CircleShape)
                                         .align(Alignment.TopEnd),
                                     contentAlignment = Alignment.Center
                                 ) {
@@ -103,13 +128,13 @@ fun HomeScreen(viewModel: SkillConnectViewModel, onNavigate: (String) -> Unit) {
                                         text = "$pendingCount",
                                         color = Color.White,
                                         fontSize = 10.sp,
-                                        fontWeight = FontWeight.Bold
+                                        fontWeight = FontWeight.ExtraBold
                                     )
                                 }
                             }
                         }
 
-                        Spacer(modifier = Modifier.width(8.dp))
+                        Spacer(modifier = Modifier.width(10.dp))
 
                         Box(
                             modifier = Modifier.clickable { onNavigate("profile") }
@@ -117,8 +142,8 @@ fun HomeScreen(viewModel: SkillConnectViewModel, onNavigate: (String) -> Unit) {
                             NeumorphicLogo(
                                 initials = user?.initials ?: "VR",
                                 size = 46.dp,
-                                backgroundColor = NeumorphicColors.accentYellow,
-                                textColor = NeumorphicColors.text
+                                backgroundColor = Color.White.copy(alpha = 0.25f),
+                                textColor = Color.White
                             )
                         }
                     }
@@ -126,19 +151,25 @@ fun HomeScreen(viewModel: SkillConnectViewModel, onNavigate: (String) -> Unit) {
 
                 Spacer(modifier = Modifier.height(18.dp))
 
+                // Barra de búsqueda con glassmorphism sutil
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(52.dp)
                         .clip(RoundedCornerShape(16.dp))
-                        .background(Color.White)
+                        .background(Color.White.copy(alpha = 0.95f))
                         .clickable { onNavigate("search") }
                         .padding(horizontal = 16.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(imageVector = Icons.Default.Search, contentDescription = "Buscar", tint = NeumorphicColors.primary)
                     Spacer(modifier = Modifier.width(12.dp))
-                    Text("Busca una habilidad o trueque, ej. Guitarra, Python...", color = NeumorphicColors.muted, fontSize = 14.sp)
+                    Text(
+                        "Busca habilidades o trueques...",
+                        color = NeumorphicColors.muted,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium
+                    )
                 }
             }
         }
@@ -151,34 +182,78 @@ fun HomeScreen(viewModel: SkillConnectViewModel, onNavigate: (String) -> Unit) {
         ) {
             Spacer(modifier = Modifier.height(18.dp))
 
-            // Tarjeta Destacada de Trueque e Intercambio de Habilidades
-            NeumorphicCard(
+            // Tarjeta Destacada de Trueque — con gradiente y micro-animación
+            val truequeInteraction = remember { MutableInteractionSource() }
+            val truequePressed by truequeInteraction.collectIsPressedAsState()
+            val truequeScale by animateFloatAsState(
+                targetValue = if (truequePressed) 0.97f else 1f,
+                animationSpec = spring(
+                    dampingRatio = Spring.DampingRatioMediumBouncy,
+                    stiffness = Spring.StiffnessMedium
+                ),
+                label = "trueque_scale"
+            )
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable { onNavigate("exchange") },
-                backgroundColor = Color(0xFFEFF6FF)
+                    .scale(truequeScale)
+                    .neumorphic(cornerRadius = 18.dp)
+                    .background(ButtonGradients.PrimaryBlueViolet, RoundedCornerShape(18.dp))
+                    .clickable(
+                        interactionSource = truequeInteraction,
+                        indication = null
+                    ) { onNavigate("exchange") }
+                    .padding(18.dp)
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(
                         modifier = Modifier
-                            .size(46.dp)
-                            .background(NeumorphicColors.primary, CircleShape),
+                            .size(50.dp)
+                            .background(Color.White.copy(alpha = 0.20f), CircleShape),
                         contentAlignment = Alignment.Center
                     ) {
-                        Icon(imageVector = Icons.Default.SwapHoriz, contentDescription = "Trueque", tint = Color.White, modifier = Modifier.size(26.dp))
+                        Icon(
+                            imageVector = Icons.Default.SwapHoriz,
+                            contentDescription = "Trueque",
+                            tint = Color.White,
+                            modifier = Modifier.size(28.dp)
+                        )
                     }
-                    Spacer(modifier = Modifier.width(12.dp))
+                    Spacer(modifier = Modifier.width(14.dp))
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("Trueque de Habilidades 🔄", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = NeumorphicColors.text)
-                        Spacer(modifier = Modifier.height(2.dp))
-                        Text("Enseña lo que sabes y aprende gratis lo que necesitas.", fontSize = 12.sp, color = NeumorphicColors.muted)
+                        Text(
+                            "Trueque de Habilidades",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = Color.White,
+                            letterSpacing = (-0.3).sp
+                        )
+                        Spacer(modifier = Modifier.height(3.dp))
+                        Text(
+                            "Enseña lo que sabes y aprende gratis.",
+                            fontSize = 13.sp,
+                            color = Color.White.copy(alpha = 0.80f),
+                            fontWeight = FontWeight.Medium
+                        )
                     }
+                    Icon(
+                        imageVector = Icons.Default.ArrowForwardIos,
+                        contentDescription = null,
+                        tint = Color.White.copy(alpha = 0.70f),
+                        modifier = Modifier.size(16.dp)
+                    )
                 }
             }
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            Text("Categorías", fontSize = 17.sp, fontWeight = FontWeight.Bold, color = NeumorphicColors.text)
+            Text(
+                "Categorías",
+                fontSize = 17.sp,
+                fontWeight = FontWeight.ExtraBold,
+                color = NeumorphicColors.text,
+                letterSpacing = (-0.3).sp
+            )
             Spacer(modifier = Modifier.height(12.dp))
             
             Column {
@@ -189,22 +264,61 @@ fun HomeScreen(viewModel: SkillConnectViewModel, onNavigate: (String) -> Unit) {
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         pair.forEach { category ->
-                            NeumorphicCard(
+                            val catInteraction = remember { MutableInteractionSource() }
+                            val catPressed by catInteraction.collectIsPressedAsState()
+                            val catScale by animateFloatAsState(
+                                targetValue = if (catPressed) 0.94f else 1f,
+                                animationSpec = spring(
+                                    dampingRatio = Spring.DampingRatioMediumBouncy,
+                                    stiffness = Spring.StiffnessMedium
+                                ),
+                                label = "cat_scale"
+                            )
+                            Box(
                                 modifier = Modifier
                                     .weight(1f)
                                     .padding(4.dp)
-                                    .height(90.dp)
-                                    .clickable { onNavigate("search") },
-                                backgroundColor = Color.White
+                                    .height(92.dp)
+                                    .scale(catScale)
+                                    .neumorphic(cornerRadius = 18.dp)
+                                    .background(NeumorphicColors.surface, RoundedCornerShape(18.dp))
+                                    .clickable(
+                                        interactionSource = catInteraction,
+                                        indication = null
+                                    ) { onNavigate("search") }
+                                    .padding(12.dp),
+                                contentAlignment = Alignment.Center
                             ) {
                                 Column(
                                     modifier = Modifier.fillMaxSize(),
                                     horizontalAlignment = Alignment.CenterHorizontally,
                                     verticalArrangement = Arrangement.Center
                                 ) {
-                                    Text(category.icon, fontSize = 22.sp, color = NeumorphicColors.primary)
-                                    Spacer(modifier = Modifier.height(4.dp))
-                                    Text(category.name, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = NeumorphicColors.text)
+                                    val categoryIcon = when (category.name) {
+                                        "Programación" -> Icons.Default.Code
+                                        "Idiomas" -> Icons.Default.Language
+                                        "Arte" -> Icons.Default.Palette
+                                        "Música" -> Icons.Default.MusicNote
+                                        "Matemáticas" -> Icons.Default.Calculate
+                                        "Cocina" -> Icons.Default.Restaurant
+                                        "Tecnología" -> Icons.Default.Computer
+                                        "Marketing" -> Icons.Default.TrendingUp
+                                        else -> Icons.Default.Category
+                                    }
+                                    Icon(
+                                        imageVector = categoryIcon,
+                                        contentDescription = category.name,
+                                        tint = NeumorphicColors.primary,
+                                        modifier = Modifier.size(28.dp)
+                                    )
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Text(
+                                        category.name,
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = NeumorphicColors.text,
+                                        textAlign = TextAlign.Center
+                                    )
                                 }
                             }
                         }
@@ -220,11 +334,17 @@ fun HomeScreen(viewModel: SkillConnectViewModel, onNavigate: (String) -> Unit) {
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("Profesores recomendados", fontSize = 17.sp, fontWeight = FontWeight.Bold, color = NeumorphicColors.text)
+                Text(
+                    "Profesores recomendados",
+                    fontSize = 17.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = NeumorphicColors.text,
+                    letterSpacing = (-0.3).sp
+                )
                 Text(
                     "Ver todos",
                     fontSize = 13.sp,
-                    fontWeight = FontWeight.Bold,
+                    fontWeight = FontWeight.SemiBold,
                     color = NeumorphicColors.primary,
                     modifier = Modifier.clickable { onNavigate("search") }
                 )
@@ -276,11 +396,17 @@ fun HomeScreen(viewModel: SkillConnectViewModel, onNavigate: (String) -> Unit) {
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("Intercambios recientes (Trueques)", fontSize = 17.sp, fontWeight = FontWeight.Bold, color = NeumorphicColors.text)
+                Text(
+                    "Intercambios recientes",
+                    fontSize = 17.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = NeumorphicColors.text,
+                    letterSpacing = (-0.3).sp
+                )
                 Text(
                     "Ver todos",
                     fontSize = 13.sp,
-                    fontWeight = FontWeight.Bold,
+                    fontWeight = FontWeight.SemiBold,
                     color = NeumorphicColors.primary,
                     modifier = Modifier.clickable { onNavigate("search") }
                 )

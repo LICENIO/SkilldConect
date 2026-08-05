@@ -81,9 +81,10 @@ fun SplashScreen(onFinished: () -> Unit) {
             Spacer(modifier = Modifier.height(48.dp))
             NeumorphicButton(
                 onClick = onFinished,
-                modifier = Modifier.fillMaxWidth(0.8f)
+                modifier = Modifier.fillMaxWidth(0.8f),
+                gradientBrush = ButtonGradients.PrimaryBlueViolet
             ) {
-                Text("Comenzar", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                Text("Comenzar", color = Color.White, fontWeight = FontWeight.ExtraBold, fontSize = 17.sp, letterSpacing = 0.3.sp)
             }
         }
     }
@@ -114,10 +115,11 @@ fun WelcomeScreen(onLogin: () -> Unit, onRegister: () -> Unit) {
             Text(
                 text = "Todo el mundo tiene algo que enseñar y todo el mundo tiene algo que aprender",
                 fontSize = 26.sp,
-                fontWeight = FontWeight.Bold,
+                fontWeight = FontWeight.ExtraBold,
                 color = NeumorphicColors.text,
                 textAlign = TextAlign.Center,
-                lineHeight = 34.sp
+                lineHeight = 32.sp,
+                letterSpacing = (-0.5).sp
             )
             Spacer(modifier = Modifier.height(14.dp))
             Text(
@@ -155,16 +157,18 @@ fun WelcomeScreen(onLogin: () -> Unit, onRegister: () -> Unit) {
         Column(modifier = Modifier.fillMaxWidth()) {
             NeumorphicButton(
                 onClick = onLogin,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                gradientBrush = ButtonGradients.PrimaryBlueViolet
             ) {
-                Text("Iniciar sesión", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                Text("Iniciar sesión", color = Color.White, fontWeight = FontWeight.ExtraBold, fontSize = 16.sp)
             }
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(14.dp))
             NeumorphicButton(
                 onClick = onRegister,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                gradientBrush = ButtonGradients.AccentViolet
             ) {
-                Text("Crear cuenta", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                Text("Crear cuenta", color = Color.White, fontWeight = FontWeight.ExtraBold, fontSize = 16.sp)
             }
             Spacer(modifier = Modifier.height(20.dp))
         }
@@ -294,11 +298,13 @@ fun LoginScreen(viewModel: SkillConnectViewModel, onSuccess: () -> Unit, onRegis
                     fontSize = 26.sp,
                     fontWeight = FontWeight.ExtraBold,
                     color = NeumorphicColors.text,
-                    textAlign = TextAlign.Center
+                    textAlign = TextAlign.Center,
+                    letterSpacing = (-0.5).sp
                 )
                 Text(
                     text = "Aprende, enseña y conecta con expertos.",
                     fontSize = 15.sp,
+                    fontWeight = FontWeight.Medium,
                     color = NeumorphicColors.muted,
                     modifier = Modifier.padding(top = 4.dp, bottom = 16.dp),
                     textAlign = TextAlign.Center
@@ -424,7 +430,6 @@ fun LoginScreen(viewModel: SkillConnectViewModel, onSuccess: () -> Unit, onRegis
                                         SkillConnectViewModel.LoginResult.IncorrectPassword -> {
                                             isPasswordError = true
                                             Toast.makeText(context, "La contraseña es incorrecta. Inténtalo de nuevo.", Toast.LENGTH_LONG).show()
-                                            // Efecto Shake
                                             launch {
                                                 shakeOffset.animateTo(15f, animationSpec = androidx.compose.animation.core.tween(50))
                                                 shakeOffset.animateTo(-15f, animationSpec = androidx.compose.animation.core.tween(50))
@@ -442,14 +447,15 @@ fun LoginScreen(viewModel: SkillConnectViewModel, onSuccess: () -> Unit, onRegis
                             }
                         },
                         modifier = Modifier.weight(1f),
+                        gradientBrush = if (isLoading) null else ButtonGradients.PrimaryBlueViolet,
                         backgroundColor = if (isLoading) Color.LightGray else NeumorphicColors.primary
                     ) {
                         if (isLoading) {
                             CircularProgressIndicator(color = Color.White, modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
                             Spacer(modifier = Modifier.width(12.dp))
-                            Text("Validando...", color = Color.White, fontWeight = FontWeight.Bold)
+                            Text("Validando...", color = Color.White, fontWeight = FontWeight.SemiBold)
                         } else {
-                            Text("Entrar ahora", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                            Text("Entrar ahora", color = Color.White, fontWeight = FontWeight.ExtraBold, fontSize = 16.sp)
                         }
                     }
 
@@ -855,9 +861,10 @@ fun RegisterScreen(viewModel: SkillConnectViewModel, onSuccess: () -> Unit, onLo
                         }
                     }
                 },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                gradientBrush = ButtonGradients.PrimaryBlueViolet
             ) {
-                Text("Registrarme", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                Text("Registrarme", color = Color.White, fontWeight = FontWeight.ExtraBold, fontSize = 16.sp)
             }
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -865,11 +872,11 @@ fun RegisterScreen(viewModel: SkillConnectViewModel, onSuccess: () -> Unit, onLo
             NeumorphicButton(
                 onClick = { triggerBiometricRegister() },
                 modifier = Modifier.fillMaxWidth(),
-                backgroundColor = Color.White
+                gradientBrush = ButtonGradients.AccentViolet
             ) {
-                Icon(Icons.Default.Fingerprint, contentDescription = null, tint = NeumorphicColors.primary, modifier = Modifier.size(20.dp))
+                Icon(Icons.Default.Fingerprint, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp))
                 Spacer(modifier = Modifier.width(12.dp))
-                Text("Registro Rápido con Huella", color = NeumorphicColors.text, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                Text("Registro Rápido con Huella", color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
             }
 
             Spacer(modifier = Modifier.height(24.dp))

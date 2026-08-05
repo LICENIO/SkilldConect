@@ -1,6 +1,12 @@
 package com.skillconnect.app.ui.components
 
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
@@ -14,15 +20,14 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
-import androidx.compose.ui.draw.scale
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.TextStyle
@@ -30,68 +35,157 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.skillconnect.app.ui.theme.NeumorphicColors
 import com.skillconnect.app.ui.theme.neumorphic
 
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// GRADIENTES — Sistema reducido a 2 (máxima coherencia visual)
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+object ButtonGradients {
+    // Gradiente principal — Cornflower pastel → Sky Blue suave (muy elegante)
+    val PrimaryBlueViolet: Brush
+        get() = Brush.horizontalGradient(
+            listOf(NeumorphicColors.primary, NeumorphicColors.accent)
+        )
+
+    // Gradiente secundario — Teal → Cyan más claro (acción secundaria)
+    val AccentViolet: Brush
+        get() = Brush.horizontalGradient(
+            listOf(NeumorphicColors.accent, Color(0xFF67E8F9))
+        )
+
+    // Alias legacy
+    val SunsetGold   get() = PrimaryBlueViolet
+    val CoralRose    get() = PrimaryBlueViolet
+    val VioletCyan   get() = AccentViolet
+    val BlueEmerald  get() = PrimaryBlueViolet
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// TIPOGRAFÍA JERARQUIZADA — Helpers para consistencia visual
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+@Composable
+fun TitleText(
+    text: String,
+    modifier: Modifier = Modifier,
+    fontSize: TextUnit = 22.sp,
+    color: Color = NeumorphicColors.text,
+    textAlign: TextAlign = TextAlign.Start
+) {
+    Text(
+        text = text,
+        modifier = modifier,
+        fontSize = fontSize,
+        fontWeight = FontWeight.ExtraBold,
+        color = color,
+        letterSpacing = (-0.5).sp,
+        lineHeight = (fontSize.value * 1.2f).sp,
+        textAlign = textAlign
+    )
+}
+
+@Composable
+fun SubtitleText(
+    text: String,
+    modifier: Modifier = Modifier,
+    fontSize: TextUnit = 15.sp,
+    color: Color = NeumorphicColors.text
+) {
+    Text(
+        text = text,
+        modifier = modifier,
+        fontSize = fontSize,
+        fontWeight = FontWeight.SemiBold,
+        color = color,
+        letterSpacing = 0.1.sp
+    )
+}
+
+@Composable
+fun BodyText(
+    text: String,
+    modifier: Modifier = Modifier,
+    fontSize: TextUnit = 13.sp,
+    color: Color = NeumorphicColors.muted
+) {
+    Text(
+        text = text,
+        modifier = modifier,
+        fontSize = fontSize,
+        fontWeight = FontWeight.Medium,
+        color = color,
+        letterSpacing = 0.1.sp,
+        lineHeight = (fontSize.value * 1.5f).sp
+    )
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// NEUMORPHIC CARD — Micro-animación spring orgánica
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
 @Composable
 fun NeumorphicCard(
     modifier: Modifier = Modifier,
-    cornerRadius: Dp = 16.dp,
+    cornerRadius: Dp = 18.dp,
     backgroundColor: Color = NeumorphicColors.surface,
     isSunken: Boolean = false,
     isPressed: Boolean = false,
     content: @Composable BoxScope.() -> Unit
 ) {
+    // Spring orgánico: se "hunde" rápido y rebota suavemente
     val scale by animateFloatAsState(
         targetValue = if (isPressed) 0.97f else 1f,
-        animationSpec = tween(durationMillis = 150)
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessMedium
+        ),
+        label = "card_scale"
     )
     Box(
         modifier = modifier
             .scale(scale)
-            .neumorphic(cornerRadius = cornerRadius, isInnerShadow = isSunken || isPressed, darkShadowColor = NeumorphicColors.darkShadow, lightShadowColor = NeumorphicColors.lightShadow)
+            .neumorphic(
+                cornerRadius = cornerRadius,
+                isInnerShadow = isSunken || isPressed,
+                darkShadowColor = NeumorphicColors.darkShadow,
+                lightShadowColor = NeumorphicColors.lightShadow
+            )
             .background(backgroundColor, RoundedCornerShape(cornerRadius))
             .padding(16.dp),
         content = content
     )
 }
 
-// Presets de gradientes de alto contraste inspirados en la imagen del usuario (Pill Buttons)
-object ButtonGradients {
-    // 1. "SHARE NOW" Style (Fucsia Magenta ➔ Naranja Carmesí ➔ Dorado Cálido) - ¡MÁXIMO DESTACA SOBRE AZUL!
-    val SunsetGold = androidx.compose.ui.graphics.Brush.horizontalGradient(
-        listOf(Color(0xFFEC4899), Color(0xFFFF5E00), Color(0xFFFFB800))
-    )
-
-    // 2. "PLAY NOW" Style (Fucsia Vívido ➔ Rojo Coral)
-    val CoralRose = androidx.compose.ui.graphics.Brush.horizontalGradient(
-        listOf(Color(0xFFF43F5E), Color(0xFFFF5252))
-    )
-
-    // 3. "SIGN UP" Style (Púrpura Violeta ➔ Azul Lavanda ➔ Celeste)
-    val VioletCyan = androidx.compose.ui.graphics.Brush.horizontalGradient(
-        listOf(Color(0xFFA855F7), Color(0xFF6366F1), Color(0xFF38BDF8))
-    )
-
-    // 4. "MORE INFO" Style (Azul Cobalto ➔ Celeste ➔ Menta Esmeralda)
-    val BlueEmerald = androidx.compose.ui.graphics.Brush.horizontalGradient(
-        listOf(Color(0xFF0284C7), Color(0xFF06B6D4), Color(0xFF10B981))
-    )
-}
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// NEUMORPHIC BUTTON — Escala 0.95f con spring al presionar + soporte gradiente
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 @Composable
 fun NeumorphicButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    cornerRadius: Dp = 25.dp, // Forma de píldora (Pill shape) idéntica a la imagen
+    cornerRadius: Dp = 25.dp,
     backgroundColor: Color = NeumorphicColors.primary,
-    gradientBrush: androidx.compose.ui.graphics.Brush? = null,
+    gradientBrush: Brush? = ButtonGradients.PrimaryBlueViolet,
     content: @Composable RowScope.() -> Unit
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
+
+    // Micro-animación: scale-down suave con spring al presionar
+    val scale by animateFloatAsState(
+        targetValue = if (isPressed) 0.95f else 1f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessMediumLow
+        ),
+        label = "btn_scale"
+    )
 
     val backgroundModifier = if (gradientBrush != null) {
         Modifier.background(gradientBrush, RoundedCornerShape(cornerRadius))
@@ -101,7 +195,12 @@ fun NeumorphicButton(
 
     Box(
         modifier = modifier
-            .neumorphic(cornerRadius = cornerRadius, isInnerShadow = isPressed, darkShadowColor = Color(0xFFC8D1E0))
+            .scale(scale)
+            .neumorphic(
+                cornerRadius = cornerRadius,
+                isInnerShadow = isPressed,
+                darkShadowColor = NeumorphicColors.darkShadow
+            )
             .then(backgroundModifier)
             .clickable(
                 interactionSource = interactionSource,
@@ -119,6 +218,10 @@ fun NeumorphicButton(
     }
 }
 
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// NEUMORPHIC ICON BUTTON — Escala 0.90f al presionar (respuesta táctil precisa)
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
 @Composable
 fun NeumorphicIconButton(
     icon: ImageVector,
@@ -133,8 +236,18 @@ fun NeumorphicIconButton(
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
 
+    // Escala más agresiva en íconos para feedback táctil inmediato
+    val scale by animateFloatAsState(
+        targetValue = if (isPressed) 0.88f else 1f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioLowBouncy,
+            stiffness = Spring.StiffnessMedium
+        ),
+        label = "icon_btn_scale"
+    )
+
     val shadowModifier = if (hasShadow) {
-        Modifier.neumorphic(cornerRadius = size / 2, isInnerShadow = isPressed, darkShadowColor = Color(0xFFC8D1E0))
+        Modifier.neumorphic(cornerRadius = size / 2, isInnerShadow = isPressed, darkShadowColor = NeumorphicColors.darkShadow)
     } else {
         Modifier
     }
@@ -142,6 +255,7 @@ fun NeumorphicIconButton(
     Box(
         modifier = modifier
             .size(size)
+            .scale(scale)
             .then(shadowModifier)
             .background(backgroundColor, CircleShape)
             .clickable(
@@ -160,6 +274,10 @@ fun NeumorphicIconButton(
     }
 }
 
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// NEUMORPHIC TEXT FIELD
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
 @Composable
 fun NeumorphicTextField(
     value: String,
@@ -174,7 +292,7 @@ fun NeumorphicTextField(
     trailingIcon: @Composable (() -> Unit)? = null
 ) {
     val heightModifier = if (singleLine) Modifier.height(54.dp) else Modifier.height(100.dp)
-    
+
     BasicTextField(
         value = value,
         onValueChange = onValueChange,
@@ -185,13 +303,14 @@ fun NeumorphicTextField(
         textStyle = TextStyle(
             color = NeumorphicColors.text,
             fontSize = 15.sp,
-            fontWeight = FontWeight.SemiBold
+            fontWeight = FontWeight.SemiBold,
+            letterSpacing = 0.1.sp
         ),
         modifier = modifier
             .fillMaxWidth()
             .then(heightModifier)
-            .neumorphic(isInnerShadow = true, cornerRadius = 16.dp, darkShadowColor = Color(0xFFC0C9D9))
-            .background(Color.White, RoundedCornerShape(16.dp))
+            .neumorphic(isInnerShadow = true, cornerRadius = 16.dp, darkShadowColor = NeumorphicColors.darkShadow)
+            .background(NeumorphicColors.surface, RoundedCornerShape(16.dp))
             .padding(horizontal = 16.dp, vertical = if (singleLine) 0.dp else 12.dp),
         decorationBox = { innerTextField ->
             Row(
@@ -202,7 +321,6 @@ fun NeumorphicTextField(
                     leadingIcon()
                     Spacer(modifier = Modifier.width(12.dp))
                 }
-                
                 Box(
                     modifier = Modifier.weight(1f),
                     contentAlignment = if (singleLine) Alignment.CenterStart else Alignment.TopStart
@@ -211,12 +329,12 @@ fun NeumorphicTextField(
                         Text(
                             text = placeholder,
                             color = NeumorphicColors.muted,
-                            fontSize = 15.sp
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Medium
                         )
                     }
                     innerTextField()
                 }
-
                 if (trailingIcon != null) {
                     Spacer(modifier = Modifier.width(12.dp))
                     trailingIcon()
@@ -226,6 +344,10 @@ fun NeumorphicTextField(
     )
 }
 
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// NEUMORPHIC CHIP — Pulsación con spring
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
 @Composable
 fun NeumorphicChip(
     text: String,
@@ -233,31 +355,49 @@ fun NeumorphicChip(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    val scale by animateFloatAsState(
+        targetValue = if (isPressed) 0.94f else 1f,
+        animationSpec = spring(stiffness = Spring.StiffnessMedium),
+        label = "chip_scale"
+    )
+
     Box(
         modifier = modifier
+            .scale(scale)
             .neumorphic(cornerRadius = 18.dp, isInnerShadow = selected)
             .background(
-                if (selected) NeumorphicColors.primary else Color.White,
+                if (selected) ButtonGradients.PrimaryBlueViolet
+                else Brush.horizontalGradient(listOf(NeumorphicColors.surface, NeumorphicColors.surface)),
                 RoundedCornerShape(18.dp)
             )
-            .clickable(onClick = onClick)
+            .clickable(
+                interactionSource = interactionSource,
+                indication = null,
+                onClick = onClick
+            )
             .padding(horizontal = 16.dp, vertical = 10.dp),
         contentAlignment = Alignment.Center
     ) {
         Text(
             text = text,
             color = if (selected) Color.White else NeumorphicColors.text,
-            fontWeight = FontWeight.Bold,
-            fontSize = 13.sp
+            fontWeight = FontWeight.SemiBold,
+            fontSize = 13.sp,
+            letterSpacing = 0.2.sp
         )
     }
 }
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// NEUMORPHIC PROGRESS BAR — Con gradiente PrimaryBlueViolet
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 @Composable
 fun NeumorphicProgressBar(
     progress: Float, // 0f to 1f
     modifier: Modifier = Modifier,
-    barColor: Color = NeumorphicColors.accentYellow,
     height: Dp = 12.dp
 ) {
     Box(
@@ -265,16 +405,23 @@ fun NeumorphicProgressBar(
             .fillMaxWidth()
             .height(height)
             .neumorphic(isInnerShadow = true, cornerRadius = height / 2)
-            .background(Color(0xFFE2E8F0), RoundedCornerShape(height / 2))
+            .background(NeumorphicColors.surfaceAlt, RoundedCornerShape(height / 2))
     ) {
         Box(
             modifier = Modifier
                 .fillMaxHeight()
                 .fillMaxWidth(progress)
-                .background(barColor, RoundedCornerShape(height / 2))
+                .background(
+                    ButtonGradients.PrimaryBlueViolet,
+                    RoundedCornerShape(height / 2)
+                )
         )
     }
 }
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// NEUMORPHIC LOGO — Avatar circular con sombra
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 @Composable
 fun NeumorphicLogo(
@@ -295,10 +442,15 @@ fun NeumorphicLogo(
             text = initials,
             color = textColor,
             fontSize = (size.value / 3).sp,
-            fontWeight = FontWeight.Bold
+            fontWeight = FontWeight.ExtraBold,
+            letterSpacing = 0.5.sp
         )
     }
 }
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// NEUMORPHIC TOP BAR — Gradiente premium en header oscuro
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 @Composable
 fun NeumorphicTopBar(
@@ -311,11 +463,7 @@ fun NeumorphicTopBar(
         Box(
             modifier = modifier
                 .fillMaxWidth()
-                .background(
-                    androidx.compose.ui.graphics.Brush.horizontalGradient(
-                        listOf(Color(0xFF155E75), Color(0xFF0EA5A3))
-                    )
-                )
+                .background(ButtonGradients.PrimaryBlueViolet)
                 .padding(horizontal = 16.dp, vertical = 14.dp)
         ) {
             Row(
@@ -327,16 +475,17 @@ fun NeumorphicTopBar(
                     icon = Icons.Default.ArrowBack,
                     onClick = onBack,
                     contentDescription = "Volver",
-                    backgroundColor = Color.White.copy(alpha = 0.25f),
+                    backgroundColor = Color.White.copy(alpha = 0.20f),
                     iconColor = Color.White,
                     size = 40.dp,
                     hasShadow = false
                 )
                 Text(
                     text = title,
-                    fontSize = 19.sp,
-                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.ExtraBold,
                     color = Color.White,
+                    letterSpacing = (-0.3).sp,
                     textAlign = TextAlign.Center,
                     modifier = Modifier.weight(1f)
                 )
@@ -358,9 +507,10 @@ fun NeumorphicTopBar(
             )
             Text(
                 text = title,
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold,
+                fontSize = 17.sp,
+                fontWeight = FontWeight.ExtraBold,
                 color = NeumorphicColors.text,
+                letterSpacing = (-0.3).sp,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.weight(1f)
             )
@@ -369,17 +519,39 @@ fun NeumorphicTopBar(
     }
 }
 
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// GLASS CARD — Efecto cristal con borde, gradiente diagonal y sombra suave
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
 @Composable
 fun GlassCard(
     modifier: Modifier = Modifier,
-    cornerRadius: Dp = 16.dp,
+    cornerRadius: Dp = 20.dp,
     content: @Composable BoxScope.() -> Unit
 ) {
     Box(
         modifier = modifier
             .clip(RoundedCornerShape(cornerRadius))
-            .background(Color.White.copy(alpha = 0.15f))
-            // We use simple border and background to simulate glass since true blur requires RenderEffect (API 31+)
+            // Fondo: gradiente diagonal translúcido (efecto cristal)
+            .background(
+                Brush.linearGradient(
+                    colors = listOf(
+                        Color.White.copy(alpha = 0.25f),
+                        Color.White.copy(alpha = 0.08f)
+                    )
+                )
+            )
+            // Borde sutil tipo cristal
+            .border(
+                width = 1.dp,
+                brush = Brush.linearGradient(
+                    listOf(
+                        Color.White.copy(alpha = 0.5f),
+                        Color.White.copy(alpha = 0.1f)
+                    )
+                ),
+                shape = RoundedCornerShape(cornerRadius)
+            )
             .padding(16.dp),
         content = content
     )

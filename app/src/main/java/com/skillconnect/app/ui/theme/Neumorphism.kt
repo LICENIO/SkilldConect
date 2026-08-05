@@ -11,57 +11,70 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
-// Paleta de colores Neumórfica con Azul Celeste Eléctrico vibrante como la imagen enviada
+// Sistema de color premium unificado — Azul Índigo + Violeta eléctrico
+// Paleta reducida a 8 tokens para máxima coherencia visual
 
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 
 object NeumorphicColors {
-    var bg by mutableStateOf(Color(0xFFF7FAFC))
-    var surface by mutableStateOf(Color(0xFFFFFFFF))
-    var surfaceAlt by mutableStateOf(Color(0xFFEAF4F4))
-    var text by mutableStateOf(Color(0xFF0F172A))
-    var muted by mutableStateOf(Color(0xFF64748B))
-    var primary by mutableStateOf(Color(0xFF0088FF))
-    var headerBg by mutableStateOf(Color(0xFF0088FF))
-    var bottomNavBg by mutableStateOf(Color(0xFF0077FF))
-    var accentYellow by mutableStateOf(Color(0xFFFDE68A))
-    var accentCyan by mutableStateOf(Color(0xFF38BDF8))
-    var green by mutableStateOf(Color(0xFF10B981))
-    var orange by mutableStateOf(Color(0xFFF97316))
-    var purple by mutableStateOf(Color(0xFF8B5CF6))
-    var pink by mutableStateOf(Color(0xFFEC4899))
-    var teal by mutableStateOf(Color(0xFF00A896))
-    
+    // ── Paleta "Ocean Deep" — Blue #3B82F6 → Teal #06B6D4 ────────────
+    var bg          by mutableStateOf(Color(0xFFF0F7FF)) // Azul-blanco muy limpio
+    var surface     by mutableStateOf(Color(0xFFFFFFFF)) // Blanco puro — tarjetas
+    var surfaceAlt  by mutableStateOf(Color(0xFFE0EFFF)) // Azul hielo suave
+
+    var text        by mutableStateOf(Color(0xFF0F172A)) // Slate-900 oscuro impactante
+    var muted       by mutableStateOf(Color(0xFF64748B)) // Slate-500 neutro elegante
+
+    var primary     by mutableStateOf(Color(0xFF3B82F6)) // Blue-500 — el azul perfecto
+    var accent      by mutableStateOf(Color(0xFF06B6D4)) // Cyan-500 — teal eléctrico
+
+    var headerBg    by mutableStateOf(Color(0xFF3B82F6))
+    var bottomNavBg by mutableStateOf(Color(0xFF1E3A5F))
+
     var lightShadow by mutableStateOf(Color(0xFFFFFFFF))
-    var darkShadow by mutableStateOf(Color(0xFFD5DBE5))
+    var darkShadow  by mutableStateOf(Color(0xFFBDD5F0)) // Sombra azulada muy suave
+
+    val accentYellow get() = Color(0xFFFBBF24) // ámbar que combina con teal
+    val green        get() = Color(0xFF10B981) // esmeralda que armoniza
+    val orange       get() = Color(0xFFF97316)
 
     fun setDarkMode(isDark: Boolean) {
         if (isDark) {
-            bg = Color(0xFF1E1E1E)
-            surface = Color(0xFF2A2A2A)
-            surfaceAlt = Color(0xFF333333)
-            text = Color(0xFFF7FAFC)
-            muted = Color(0xFFA0AABF)
-            primary = Color(0xFF38BDF8) // Brighter for dark mode
-            headerBg = Color(0xFF1E1E1E)
-            bottomNavBg = Color(0xFF1E1E1E)
-            
-            lightShadow = Color(0xFF2C2C2C) // Destello oscuro
-            darkShadow = Color(0xFF111111) // Sombra profunda
+            // Dark Mode — azul noche profundo
+            bg         = Color(0xFF0D1829) // Azul noche profundo
+            surface    = Color(0xFF162032) // Azul marino oscuro
+            surfaceAlt = Color(0xFF1E2D42)
+
+            text       = Color(0xFFE2F0FF) // Blanco azulado suave
+            muted      = Color(0xFF7FA8C9) // Azul gris claro
+
+            primary    = Color(0xFF60A5FA) // Blue-400 — más luminoso sobre oscuro
+            accent     = Color(0xFF22D3EE) // Cyan-400 — teal brillante
+
+            headerBg   = Color(0xFF0D1829)
+            bottomNavBg= Color(0xFF0D1829)
+
+            lightShadow = Color(0xFF1E2D42)
+            darkShadow  = Color(0xFF050C14)
+
         } else {
-            bg = Color(0xFFF7FAFC)
-            surface = Color(0xFFFFFFFF)
-            surfaceAlt = Color(0xFFEAF4F4)
-            text = Color(0xFF0F172A)
-            muted = Color(0xFF64748B)
-            primary = Color(0xFF0088FF)
-            headerBg = Color(0xFF0088FF)
-            bottomNavBg = Color(0xFF0077FF)
-            
+            bg         = Color(0xFFF0F7FF)
+            surface    = Color(0xFFFFFFFF)
+            surfaceAlt = Color(0xFFE0EFFF)
+
+            text       = Color(0xFF0F172A)
+            muted      = Color(0xFF64748B)
+
+            primary    = Color(0xFF3B82F6)
+            accent     = Color(0xFF06B6D4)
+
+            headerBg   = Color(0xFF3B82F6)
+            bottomNavBg= Color(0xFF1E3A5F)
+
             lightShadow = Color(0xFFFFFFFF)
-            darkShadow = Color(0xFFD5DBE5)
+            darkShadow  = Color(0xFFBDD5F0)
         }
     }
 }
